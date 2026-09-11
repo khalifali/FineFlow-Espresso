@@ -35,7 +35,7 @@
 \newcommand{\pos}[1]{\left[#1\right]_+}
 \newcommand{\dd}{\,\mathrm d}
 \newcommand{\code}[1]{\texttt{#1}}
-\graphicspath{{../results/}{../verification_results/}}
+\graphicspath{{../closure_comparison/}{../closure_comparison/darcy_exponential/}{../verification_results/}}
 
 \begin{document}
 
@@ -55,13 +55,13 @@ blockage, detachment and cup washout\par}
 {\normalsize Technical University of Munich\par
 Chair of Process Systems Engineering\par}
 \vfill
-{\normalsize Demonstrator version documented from the current Python implementation\par}
+{\normalsize Revision: 11 September 2026; Darcy baseline and controlled closure comparison\par}
 \vspace{0.3cm}
 {\small The parameter values shown here are illustrative and uncalibrated.\par}
 \end{titlepage}
 
 \pagenumbering{roman}
-\tableofcontents
+{\small\setlength{\parskip}{0pt}\tableofcontents}
 \newpage
 \pagenumbering{arabic}
 
@@ -80,6 +80,8 @@ measurements, test mechanistic hypotheses, and provide interpretable predictions
 without resolving each pore. It is not a substitute for pore-scale simulation.
 Computed axial blockage locations are effective model states rather than direct
 predictions of lateral channel geometry.
+\textbf{Reverse flow and radial channeling are outside the scope of this work.}
+Local permeability recovery describes deposit removal, not radial bypass flow.
 
 The software supports three levels of structural information:
 \begin{enumerate}
@@ -161,7 +163,7 @@ pore passages is returned to the mobile phase.}
   \item Radial flow redistribution and explicit channels are not resolved.
   \item One effective fines population is used; particle-size-dependent transport is deferred.
   \item Fluid properties are constant and extraction chemistry, gas release, swelling, and thermal variation are omitted.
-  \item Darcy--Forchheimer flow is evaluated as a one-dimensional algebraic
+  \item Darcy flow (default), with optional Forchheimer inertia, is evaluated as an algebraic
   pressure-gradient closure; no momentum PDE is solved.
   \item The basket model is level 1: constant hydraulic resistance and constant fines-retention fraction.
   \item Basket deposits do not yet modify basket resistance and cannot detach.
@@ -282,13 +284,29 @@ The software provides three alternative permeability closures.
 \frac{K_{\min}}{K_0}\right]. \label{eq:kexp}
 \end{equation}
 
+The exponential is an empirical demonstrator choice, not a coffee-specific
+law derived from measurements. Writing $x=m_{\mathrm d}/m_{\mathrm{cap}}$, a
+constant logarithmic sensitivity $\mathrm d\ln(K/K_0)/\mathrm dx=-\beta$
+integrates to Eq.~\eqref{eq:kexp} with $K/K_0=1$ at $x=0$. This motivates a
+smooth, positive and tunable closure; it does not establish its physical validity.
+At capacity, the illustrative $\beta=5.5$ imposes $K/K_0=e^{-5.5}=0.00409$
+before clipping. Strong blockage is thus an input assumption.
+
 \paragraph{Kozeny--Carman-style closure.}
 \begin{equation}
 \frac{K}{K_0}=
 \left(\frac{\varepsilon}{\varepsilon_0}\right)^3
 \left(\frac{1-\varepsilon_0}{1-\varepsilon}\right)^2,
 \end{equation}
-subject to the configured minimum ratio.
+subject to clipping between the configured minimum ratio and one. This is a
+relative porosity law with independently prescribed $K_0(z)$. It assumes the
+surface/geometry prefactor is unchanged during deposition. A constant Kozeny
+factor cancels when dividing by the initial state; the implementation has no
+separate Kozeny-factor input. The exponential parameter
+\code{permeability\_blocking\_factor} is not a Kozeny factor and is unused here.
+Deposit density determines porosity loss, while deposit capacity still limits
+capture. Preferential throat blockage and changing specific surface are not
+resolved by this relative law.
 
 \paragraph{Pore-network table.}
 For 
@@ -296,11 +314,11 @@ For
 user-provided table of $m_{\mathrm d}$ versus $K/K_0$. This allows a pore-network
 calculation to define the continuum closure without forcing it into the
 exponential form. Values outside the supplied deposit range use the nearest
-table endpoint and are then bounded by the minimum permeability ratio.
+table endpoint and are then clipped between the minimum permeability ratio and one.
 
 \section{Hydraulics, machine control, and basket sieve}
 
-\subsection{Darcy--Forchheimer puck resistance}
+\subsection{Darcy baseline and optional Forchheimer resistance}
 
 No momentum equation is solved. For constant area and incompressible flow, the
 superficial velocity $q=Q/A$ is uniform in $z$, and the local pressure-gradient
@@ -310,7 +328,7 @@ G(z,t)=\frac{\mu q}{K(z,t)}
  +\rho\beta_F(z,t)|q|q. \label{eq:df}
 \end{equation}
 The first term is viscous Darcy resistance. The second is nonlinear inertial
-resistance, with Forchheimer coefficient $\beta_F$ in m$^{-1}$. Selecting
+resistance, with Forchheimer coefficient $\beta_F$ in m$^{-1}$. The default
 \code{hydraulic\_model = darcy} sets $\beta_F=0$. The optional evolution law
 \begin{equation}
 \beta_F=\beta_{F,0}\left(\frac{K_0}{K}\right)^{n_F}
@@ -322,12 +340,13 @@ For positive flow, axial integration gives
 \begin{equation}
 \Delta p_{\mathrm{puck}}
 =q\int_0^L\frac{\mu}{K}\dd z
-q^2\int_0^L\rho\beta_F\dd z. \label{eq:dfintegrated}
++q^2\int_0^L\rho\beta_F\dd z. \label{eq:dfintegrated}
 \end{equation}
 Consequently, prescribed-pressure operation requires only the positive root of
-a scalar quadratic equation.
+a scalar quadratic equation when inertia is enabled, or a linear resistance
+inversion for Darcy flow.
 
-\subsection{Why Darcy--Forchheimer rather than direct Ergun}
+\subsection{Measured permeability and the role of Ergun}
 
 Ergun estimates the complete resistance from porosity, sphericity and one
 effective particle diameter. CT and the five-parameter PSD can supply these
@@ -341,8 +360,9 @@ flows. Ergun remains useful as a baseline and gives the estimate
 \beta_{F,\mathrm{Ergun}}=
 \frac{1.75(1-\varepsilon)}{\varepsilon^3d_{\mathrm{eff}}}.
 \end{equation}
-Thus Darcy--Forchheimer preserves resolved viscous structure while retaining
-the inertial physics that motivates Ergun.
+Darcy is selected for the current tested regime. The optional inertial term
+should be enabled when pressure--flow data require it. The comparison below
+is not evidence that inertia is negligible for every grind or flow rate.
 
 \subsection{Level-1 basket boundary}
 
@@ -366,7 +386,7 @@ reported destination of fines but does not feed back into $R_{\mathrm s}$.
 \begin{description}[style=nextline,leftmargin=2.6cm]
 \item[Flow mode] $Q(t)$ is prescribed and Eq.~\eqref{eq:series} predicts total pressure.
 \item[Pressure mode] Total pressure is prescribed and the positive root of the
-integrated Darcy--Forchheimer law gives $Q$. An optional pressure pulse can
+selected resistance law gives $Q$ (linear for Darcy, quadratic with inertia). An optional pressure pulse can
 challenge deposit stability.
 \item[PI mode] The machine changes its flow command to approach a total-pressure target, subject to a pump-flow cap and actuator lag.
 \end{description}
@@ -467,8 +487,14 @@ For forward flow, the face flux is
 F_{i+1/2}=q c_i
 -\varepsilon_{i+1/2}D\frac{c_{i+1}-c_i}{\Delta z}.
 \end{equation}
-Advection is first-order upwind and dispersion is centred. This combination is
-conservative; the upwind part is monotone under the applied CFL restriction and
+Advection is first-order upwind and dispersion is centred. Each internal face
+has one flux used with opposite signs in its adjacent cells, so internal fluxes
+cancel when summing the balances. Equal-and-opposite inventory transfers and
+consistent outlet/basket accounting preserve total fine mass. This is why FVM
+is a natural conservative choice; conservation is not guaranteed merely by
+calling a scheme finite volume. It also does not guarantee accuracy or physical
+validity. The implementation monitors the global mass residual;
+ the upwind part is monotone under the applied CFL restriction and
 therefore does not create spurious oscillatory extrema in the pure-advection test.
 
 The local Darcy--Forchheimer gradient is calculated in each cell. The discrete
@@ -607,64 +633,97 @@ can pressure and flow alone separate release, deposition, permeability loss,
 detachment and basket capture. Fitting all parameters simultaneously would
 therefore be structurally non-identifiable.
 
-\section{Generated demonstration results}
+\section{Controlled comparison and demonstration results}
 
-Figure~\ref{fig:dashboard} is generated directly by the current Python solver
-for the selected illustrative 
-\code{fine\_puck} case. It shows the PI-controlled hydraulic response, the
-distinction between puck-outlet and cup fines, and the evolving deposit and
-relative-permeability fields.
+The frozen \code{comparison\_reference.json} defines a 40-cell, 60-s study.
+From the solver directory, reproduce its three cases with:
+\begin{verbatim}
+python3 compare_closures.py
+\end{verbatim} The script does not read the active named case configuration.
+All kinetics, initial permeability, controller and numerical settings are held
+fixed; no parameters are fitted. Only the indicated switch changes:
+\begin{enumerate}
+\item Forchheimer + exponential: archived reference configuration.
+\item Darcy + exponential: remove inertia only, relative to case 1.
+\item Darcy + Kozeny--Carman: change permeability law only, relative to case 2.
+\end{enumerate}
+The script checks these parameter differences, global mass error and mobile
+positivity. The active \code{fine\_puck} case and Python hydraulic default now
+use Darcy. Exponential remains the permeability default. The explicit
+\code{coarse\_puck} configuration retains its earlier hydraulic selection.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.98\textwidth]{fine_puck_dashboard.png}
-\caption{Current illustrative fine-puck result. Parameters are not calibrated.}
-\label{fig:dashboard}
-\end{figure}
+\subsection{Removing inertia has negligible effect in this test}
 
-Selected final quantities are listed in Table~\ref{tab:result}. The basket
-retains 35\% of the fines crossing the puck boundary by construction. The
-sieve pressure contribution is small at the final low flow because the level-1
-resistance is constant.
+The maximum flow difference between cases 1 and 2 is
+$2.9642\times10^{-7}$ mL/s, or $2.9102\times10^{-7}$ of the reference peak flow.
+The maximum total-pressure difference is 0.02034 Pa. These results support
+using Darcy for this illustrative regime. They do not establish a universal
+absence of inertial losses in espresso pucks.
+
+\subsection{Permeability choice strongly changes the prediction}
 
 \begin{table}[H]
 \centering
-\caption{Illustrative result generated by the current code.}
+\caption{Controlled Darcy comparison at 60 s, with no parameter refitting.}
 \label{tab:result}
-\begin{tabular}{@{}lr@{}}
+\begin{tabular}{@{}lrr@{}}
 \toprule
-Quantity & Value\\
+Quantity & Exponential & Kozeny--Carman\\
 \midrule
-Final total pressure drop & 8.9906 bar\\
-Final puck pressure drop & 8.9902 bar\\
-Final Forchheimer contribution & $5.88\times10^{-9}$ bar\\
-Final sieve pressure drop & 0.00045 bar\\
-Final flow rate & 0.0453 mL s$^{-1}$\\
-Fines leaving puck & 0.06143 g\\
-Fines retained by basket & 0.02150 g\\
-Fines reaching cup & 0.03993 g\\
-Minimum local $K/K_0$ & 0.01263\\
-Minimum final hydraulic diameter & 76.58 $\mu$m\\
-Maximum final $d_f/d_h$ & 0.3264\\
-Mean final escape probability & 0.6447\\
-Maximum relative mass error & $1.32\times10^{-15}$\\
+Final total pressure [bar] & 8.99061 & 9.00031\\
+Final flow [mL/s] & 0.04535 & 0.89243\\
+Cumulative cup fines [g] & 0.03993 & 0.34664\\
+Minimum local $K/K_0$ & 0.01263 & 0.72264\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-For the illustrative fine-puck parameters, the Forchheimer contribution is
-negligible because the calibrated-looking permeability value produces a strongly
-viscous-dominated resistance at the predicted flow. This is a model result, not
-a reason to remove the term: coarse high-flow cases can show a larger
-contribution, and the measured $\Delta p(Q)$ curvature must determine
-$\beta_F$.
+The PI controller approaches the same pressure target in both cases, but their
+flow and fines predictions differ substantially. The exponential law imposes
+strong permeability loss; the porosity-only relative law predicts a milder loss
+for this deposit density. This is sensitivity evidence, not validation of
+either closure. Do not tune Kozeny--Carman to reproduce the exponential result
+as though that result were experimental truth. CT, PNM and independent
+pressure--flow and fines measurements must constrain the closure.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{comparison_flow.pdf}
+\caption{Common-input comparison of the predicted flow histories.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{comparison_permeability.pdf}
+\caption{Final relative permeability: closure choice dominates the inertia
+switch in this test. Initial deposits are zero, so initial permeability equals
+$K_0$.}
+\end{figure}
+
+\subsection{Comparison metrics and archived outputs}
+
+Metrics in \code{comparison\_metrics.json} compare matching saved times and,
+for fields, all axial cells. For a reference array $a$ and candidate $b$,
+\[
+ E_{\mathrm{abs}}=\max|a-b|,\qquad
+ E_{\mathrm{peak}}=\frac{\max|a-b|}{\max|a|}.
+\]
+The normalized value is a fraction, not a percentage. If the reference peak
+is zero, the script records a null normalized value. Peak normalization avoids
+pointwise division by zero at startup. These metrics are neither RMSE nor
+experimental errors. Parameter snapshots, CSV histories, NPZ profiles and
+single-axis PDF/PNG comparison figures are committed with the study.
+The older \code{results/} directory is an archived run, identified by its own
+parameter snapshot; it should not be described as a fresh run of the new defaults.
 
 \section{Numerical verification}
 
 Verification asks whether the equations are solved correctly; validation asks
 whether those equations and calibrated parameters represent real espresso.
 The repository contains conventional unit tests and an extended verification
-program. The present version passes 15 unit tests and 17 extended checks.
+program. The archived verification evidence reports 15 unit tests and 17 extended
+checks. These checks are numerical verification, not physical validation;
+re-run them after solver changes.
 
 The extended suite includes:
 \begin{itemize}
@@ -727,7 +786,7 @@ program exit status indicates that at least one verification criterion failed.
   \item Basket-retained fines cannot detach or enter the cup later.
   \item Deposit-capacity and outlet-capture profiles are empirical.
   \item Static CT constrains structure but not unique kinetic parameters.
-  \item Radial heterogeneity, lateral channels, cracks and individual basket holes are unresolved.
+  \item Reverse flow and radial channeling are outside scope; cracks and individual basket holes are unresolved.
   \item Extraction, dissolution, temperature, gas, swelling and mechanical compaction are absent.
   \item The simple constant pump-flow cap should ultimately be replaced by a measured pump curve.
   \item Uncertainty propagation and parameter-identifiability analysis are not yet implemented.

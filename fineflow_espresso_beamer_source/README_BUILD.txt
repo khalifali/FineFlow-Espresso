@@ -29,3 +29,15 @@ Presenter transcript (slide left, transcript right):
   python build_transcript.py
 Run this after recompiling the main PDF. The editable transcript is transcript.json.
 The script also produces a source archive. All restored TikZ diagrams remain editable.
+
+Technical report (from repository root):
+  cd fineflow_espresso_solver/fineflow_espresso/documentation
+  pdflatex -interaction=nonstopmode -halt-on-error fineflow_espresso_technical_report.tex
+  pdflatex -interaction=nonstopmode -halt-on-error fineflow_espresso_technical_report.tex
+
+After rerunning compare_closures.py, copy comparison_*.pdf and comparison_*.png
+from closure_comparison/ to this deck's figures/ directory, and update the
+numerical statements in the deck, transcript.json and technical report together.
+The transcript build reads transcript.json; edit that file rather than the
+generated presenter_transcript.txt. The generated source archive contains the
+TeX, transcript text and figures; it is not a complete solver/repository backup.
