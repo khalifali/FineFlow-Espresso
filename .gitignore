@@ -21,3 +21,8 @@ venv/
 # Editor and OS files
 *~
 .DS_Store
+
+# Transient figure exports
+*.tmp.png
+*.tmp.pdf
+fineflow_espresso_beamer_source/fineflow_espresso_source.zip

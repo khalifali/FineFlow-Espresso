@@ -12,6 +12,9 @@ fineflow_espresso.py   Solver and plotting program.
 case_config.json       One JSON configuration containing named cases.
 test_fineflow.py       Fast unit and component tests.
 verify_fineflow.py     Analytical and refinement verification suite.
+compare_closures.py    Controlled three-case closure study.
+comparison_reference.json  Frozen, complete comparison input.
+closure_comparison/    Saved comparison results and reproduction notes.
 documentation/         Technical LaTeX report and compiled PDF.
 
 The supplied numbers are illustrative and are not calibrated coffee data.
@@ -47,7 +50,8 @@ control_mode = "pi"
 
 control_mode = "pressure"
     Total puck-plus-basket pressure is prescribed. The code inverts the
-    nonlinear Darcy-Forchheimer law to obtain flow. An optional pressure pulse
+    selected hydraulic law to obtain flow: linear for Darcy, quadratic for
+    Darcy-Forchheimer. An optional pressure pulse
     can challenge deposit stability.
 
 control_mode = "flow"
@@ -67,23 +71,25 @@ Useful command-line overrides:
 Only one pressure/flow operating override may be used at a time.
 
 
-4. HYDRAULIC MODEL: DARCY-FORCHHEIMER
+4. HYDRAULIC MODEL: DARCY WITH OPTIONAL INERTIA
 --------------------------------------
 
 The default is:
 
-    "hydraulic_model": "darcy_forchheimer"
+    "hydraulic_model": "darcy"
 
+The active fine_puck case also uses Darcy. The archived coarse_puck case
+explicitly retains Darcy-Forchheimer; named-case settings override defaults.
 For each axial cell, the pressure-gradient magnitude is
 
     G = mu*q/K + rho*beta_F*abs(q)*q.
 
 The first term is viscous Darcy resistance. The second is nonlinear inertial
-resistance. Set
+resistance. Darcy suppresses the second term. To enable it, set
 
-    "hydraulic_model": "darcy"
+    "hydraulic_model": "darcy_forchheimer"
 
-to suppress the second term while keeping the same evolving permeability.
+while keeping the same evolving permeability.
 
 Important parameters:
 
@@ -101,7 +107,7 @@ exponent evolves beta_F as
 Use zero exponent unless PNM or experiments demonstrate that inertial resistance
 changes systematically during blockage.
 
-Why Darcy-Forchheimer is preferred over a direct Ergun closure
+Why use measured permeability, with inertia only when needed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Ergun estimates both viscous and inertial resistance from porosity, one
@@ -110,7 +116,7 @@ porosity and surface area, and the five-parameter PSD can provide a surface-
 volume diameter, but these scalars do not preserve pore connectivity,
 tortuosity, bottlenecks, or localized throat blockage.
 
-Darcy-Forchheimer is the useful middle ground:
+Darcy is the current baseline; Darcy-Forchheimer is an optional extension:
 
   * K(z,t) can come directly from CT-based PNM or pressure-flow measurements,
     so the viscous term retains real structural information.
@@ -162,6 +168,29 @@ Deposits reduce porosity. Their effect on permeability is selected with:
     "permeability_model": "exponential"
     "permeability_model": "kozeny_carman"
     "permeability_model": "pnm_table"
+
+These are alternatives for K/K0, independently of the hydraulic_model switch.
+All three ratios are clipped to [minimum_permeability_ratio, 1].
+
+Exponential (current default):
+    K/K0 = exp(-beta*m_d/m_cap)
+    beta = permeability_blocking_factor (dimensionless).
+    This is an empirical demonstrator closure, not a coffee-specific law
+    derived from data. It represents a constant fractional permeability loss
+    per increment of normalized deposit: d ln(K/K0)/d(m_d/m_cap) = -beta.
+    It was chosen for a simple, smooth, positive and tunable blockage response.
+    At capacity, beta=5.5 imposes K/K0=exp(-5.5)=0.00409 before clipping.
+    Strong blockage is therefore an assumption, not a measured finding.
+
+Kozeny-Carman-style relative law:
+    epsilon = max(epsilon0-m_d/deposit_density_kg_m3, minimum_porosity)
+    K/K0 = (epsilon/epsilon0)^3 * ((1-epsilon0)/(1-epsilon))^2
+    K0 remains independently prescribed. The relative formula assumes the
+    surface/geometry prefactor stays fixed; it does not predict absolute K0
+    or resolve preferential throat clogging. A constant Kozeny factor cancels
+    in this ratio. permeability_blocking_factor is NOT a Kozeny factor and has
+    no effect when this option is selected. Deposit density controls the
+    porosity change; deposit capacity still controls capture saturation.
 
 For pnm_table provide increasing deposit values and positive K/K0 ratios:
 
@@ -402,10 +431,47 @@ limits, and spatial/time refinement. Verification establishes that the stated
 equations are solved consistently; it does not validate the closures physically.
 
 
-12. IMPORTANT LIMITATIONS
+12. CONTROLLED COMPARISON AND REPORT BUILD
+------------------------------------------
+
+From the solver directory:
+
+    python3 compare_closures.py
+
+This reads comparison_reference.json, not the active case_config.json.
+It runs Forchheimer/exponential, Darcy/exponential and Darcy/Kozeny-Carman.
+Only one model switch changes in each adjacent comparison; kinetics, K0,
+controller, mesh and timestep settings are fixed, with no fitting. The script
+checks the parameter differences, mass conservation and mobile positivity.
+See closure_comparison/README.md and comparison_metrics.json for the results.
+The tiny inertia effect supports Darcy only for this tested regime; the large
+permeability-law effect is a sensitivity result, not physical validation.
+
+To rebuild the technical report (requires a LaTeX installation):
+
+    cd documentation
+    pdflatex -interaction=nonstopmode -halt-on-error fineflow_espresso_technical_report.tex
+    pdflatex -interaction=nonstopmode -halt-on-error fineflow_espresso_technical_report.tex
+
+The report uses committed comparison figures and verification results.
+After changing comparison inputs, regenerate the results and revise the
+reported numbers together. The legacy results/ directory is an archived run;
+its parameter snapshot identifies its model choices.
+
+
+13. IMPORTANT LIMITATIONS
 -------------------------
 
-The model is axial and cannot predict lateral channels or cracks. The present
+Reverse flow and radial channeling are outside the scope of this work.
+The model supports forward flow and cannot predict lateral channels or cracks.
+A local permeability increase during deposit washout is not a radial channel.
+
+Finite-volume transport is conservative because each internal face uses one
+shared flux with opposite signs in its neighboring cells. Matched inventory
+transfers and consistent outlet/basket accounting preserve global fine mass.
+FVM alone does not guarantee conservation if those parts are inconsistent;
+check the reported mass error. Conservation does not establish accuracy.
+ The present
 PSD is represented by one effective transported fines population. The level-1
 basket cannot clog or release retained fines. Pressure-dependent bed compaction,
 swelling, gas release, temperature variation, and soluble-coffee extraction are

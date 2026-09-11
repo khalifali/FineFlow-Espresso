@@ -36,7 +36,7 @@ The closures implemented in the concept are:
 
 ```text
 release:     R_rel = k_rel * m_a * f_q(q)
-deposition:  R_dep = k_dep * |q| * c * max(1 - m_d/m_cap, 0)
+deposition:  R_dep = k_dep * chi(z) * |q| * c * max(1 - m_d/m_cap, 0)
 detachment:  R_det,* = k_det * m_d * max(G/G_crit - 1, 0)^b
 washout:     R_wash = P_escape(d_f/d_h) * R_det,*
 blocking:    K = K0 * exp(-beta * m_d/m_cap)
@@ -50,8 +50,7 @@ exported from pore-network calculations. Optional axial arrays
 `initial_porosity_profile` and `initial_permeability_profile_m2` accept one
 value per finite-volume cell, allowing depth-resolved CT/PNM inputs.
 
-`hydraulic_model` selects `darcy` or `darcy_forchheimer`; the latter is the
-default. It preserves CT/PNM-derived permeability in the viscous term while
+`hydraulic_model` selects `darcy` (default) or `darcy_forchheimer`. The latter is optional. It preserves CT/PNM-derived permeability in the viscous term while
 adding an independently calibratable nonlinear inertial term. This retains more
 structural information than calculating the entire resistance from the Ergun
 porosity-and-effective-diameter correlation.
@@ -173,7 +172,33 @@ fine-mass inventory.
 
 ## Important limitation
 
+Reverse flow and radial channeling are outside the scope of this work.
 The axial location of blockage is an internal 1D model prediction. Global
-pressure and flow alone cannot validate its physical location. Lateral
-channeling is represented only as an effective local permeability recovery;
-the code does not predict an actual channel geometry.
+pressure and flow alone cannot validate its physical location. Permeability recovery represents local deposit removal; it does not model
+radial redistribution or channel geometry.
+
+## Darcy selection and closure sensitivity
+
+The default solver and active `fine_puck` case now use Darcy flow. The optional
+Darcy–Forchheimer model remains available. Run `python compare_closures.py` to
+reproduce the isolated inertia comparison and the separate Kozeny–Carman study.
+See `closure_comparison/README.md` for the design, quantitative results and limits.
+
+The two model selections are independent: `hydraulic_model` controls the
+pressure-flow relation; `permeability_model` controls deposit-induced change in
+`K/K0`. Exponential remains the active permeability choice. Its dimensionless
+`permeability_blocking_factor` is an empirical blockage-strength parameter,
+not a Kozeny factor. With beta = 5.5, the unclipped ratio at deposit capacity is
+0.00409; this severe loss is imposed, not experimentally established.
+The Kozeny-Carman option retains prescribed `K0` and changes only the relative
+porosity law, assuming a fixed surface/geometry prefactor. A constant Kozeny
+factor cancels in that ratio. See manual section 5 for equations and assumptions.
+
+Finite-volume conservation follows from shared face fluxes, matched transfers
+between fines inventories, and consistent basket/outlet accounting. It is
+checked numerically and should not be confused with experimental validation.
+
+The committed `results/` files describe an earlier run; inspect their parameter
+snapshot before comparing them with current defaults. The technical report now
+uses the controlled study in `closure_comparison/`. Manual section 12 gives
+reproduction and LaTeX build commands.
