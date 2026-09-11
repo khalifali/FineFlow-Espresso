@@ -1,0 +1,18 @@
+name,passed,value,limit,units,explanation
+Uniform-bed Darcy pressure,True,1.5378926308296016e-16,1e-12,relative error,Numerical pressure drop versus the exact Darcy solution.
+Superficial-velocity continuity,True,0.0,1e-14,relative range,Constant-area incompressible 1D flow must have one velocity in every cell.
+Finite nonnegative pore velocity,True,0.001051360437917131,0.0,m/s minimum,
+Uniform-bed Darcy-Forchheimer pressure,True,0.0,1e-12,relative error,Numerical pressure drop versus the exact linear-plus-quadratic law.
+Darcy-Forchheimer pressure inversion,True,0.0,1e-12,relative error,The positive scalar root must reproduce the prescribed total pressure.
+Size-ratio washout selectivity,True,7.999993091255126,0.0,kg/m3 difference,Larger fines must remain more strongly trapped at equal hydraulic loading.
+Global fines conservation,True,7.327846741211131e-16,1e-10,relative error,
+Nonnegative fines states,True,0.0,-1e-12,kg/m3 minimum,
+Permeability does not exceed K0,True,0.0,1e-12,excess ratio,
+Porosity lower bound,True,0.34290011689227246,0.08,minimum,
+Analytical release ODE,True,1.5543122344752192e-15,0.003,maximum normalized error,
+Pure-advection boundedness/TVD,True,0.0,1e-10,absolute,First-order upwind transport should create no new oscillatory extrema.
+Spatial refinement convergence,True,0.028998585208631262,0.08,max relative difference,Difference of the penultimate resolution from the finest computed result.
+Temporal refinement convergence,True,0.0045110849558950864,0.08,max relative difference,Difference of the penultimate resolution from the finest computed result.
+PI reaches attainable pressure,True,0.050962992948926984,0.1,bar error,
+PI respects pump-flow cap,True,0.0,1e-10,mL/s excess,
+Coarse case remains below target at cap,True,0.8200611415753614,9.0,bar,

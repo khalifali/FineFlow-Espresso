@@ -1,0 +1,413 @@
+FINEFLOW-ESPRESSO: USER AND CALIBRATION MANUAL
+================================================
+
+1. PURPOSE AND FILES
+--------------------
+
+FineFlow-Espresso is a conservative one-dimensional finite-volume model for
+fines release, migration, deposition, blockage, hydraulic detachment, geometric
+escape, basket retention, and fines reaching the cup.
+
+fineflow_espresso.py   Solver and plotting program.
+case_config.json       One JSON configuration containing named cases.
+test_fineflow.py       Fast unit and component tests.
+verify_fineflow.py     Analytical and refinement verification suite.
+documentation/         Technical LaTeX report and compiled PDF.
+
+The supplied numbers are illustrative and are not calibrated coffee data.
+
+
+2. INSTALLATION AND BASIC RUN
+-----------------------------
+
+From this folder:
+
+    python3 -m pip install -r requirements.txt
+    python3 fineflow_espresso.py --config case_config.json --output-dir results
+
+The active JSON case is selected by:
+
+    "selected_case": "fine_puck"
+
+Change this to "coarse_puck", or add any new named block under "cases". A case
+inherits unspecified values from ModelParameters in the Python file, never from
+another JSON case. For reproducible research, list the complete parameter set
+and retain the generated *_parameters.json snapshot.
+
+JSON has no comment syntax. Fields beginning with "_" are notes and are ignored.
+
+
+3. OPERATING MODES
+------------------
+
+control_mode = "pi"
+    A flow-actuated PI controller approaches pressure_setpoint_pa. The command
+    is limited by pump_flow_max_m3_s and filtered by pump_time_constant_s. A
+    permeable puck can remain below 9 bar when the pump reaches its flow cap.
+
+control_mode = "pressure"
+    Total puck-plus-basket pressure is prescribed. The code inverts the
+    nonlinear Darcy-Forchheimer law to obtain flow. An optional pressure pulse
+    can challenge deposit stability.
+
+control_mode = "flow"
+    Volumetric flow_rate_m3_s is prescribed and pressure is predicted.
+
+Useful command-line overrides:
+
+    python3 fineflow_espresso.py --config case_config.json --duration 30
+    python3 fineflow_espresso.py --config case_config.json --pi-pressure-bar 9
+    python3 fineflow_espresso.py --config case_config.json --pump-cap-ml-s 8
+    python3 fineflow_espresso.py --config case_config.json --pressure-bar 9
+    python3 fineflow_espresso.py --config case_config.json --flow-ml-s 1.5
+    python3 fineflow_espresso.py --config case_config.json --hydraulic-model darcy
+    python3 fineflow_espresso.py --config case_config.json --forchheimer-coefficient-m-inv 100000
+    python3 fineflow_espresso.py --config case_config.json --case-name trial_03
+
+Only one pressure/flow operating override may be used at a time.
+
+
+4. HYDRAULIC MODEL: DARCY-FORCHHEIMER
+--------------------------------------
+
+The default is:
+
+    "hydraulic_model": "darcy_forchheimer"
+
+For each axial cell, the pressure-gradient magnitude is
+
+    G = mu*q/K + rho*beta_F*abs(q)*q.
+
+The first term is viscous Darcy resistance. The second is nonlinear inertial
+resistance. Set
+
+    "hydraulic_model": "darcy"
+
+to suppress the second term while keeping the same evolving permeability.
+
+Important parameters:
+
+    fluid_density_kg_m3
+    forchheimer_coefficient_m_inv
+    initial_forchheimer_profile_m_inv
+    forchheimer_permeability_exponent
+
+If initial_forchheimer_profile_m_inv is empty, one uniform coefficient is used.
+If a profile is supplied, it must contain exactly n_cells values. The optional
+exponent evolves beta_F as
+
+    beta_F = beta_F,0 * (K0/K)^exponent.
+
+Use zero exponent unless PNM or experiments demonstrate that inertial resistance
+changes systematically during blockage.
+
+Why Darcy-Forchheimer is preferred over a direct Ergun closure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ergun estimates both viscous and inertial resistance from porosity, one
+effective particle diameter, sphericity, and fixed coefficients. CT can measure
+porosity and surface area, and the five-parameter PSD can provide a surface-
+volume diameter, but these scalars do not preserve pore connectivity,
+tortuosity, bottlenecks, or localized throat blockage.
+
+Darcy-Forchheimer is the useful middle ground:
+
+  * K(z,t) can come directly from CT-based PNM or pressure-flow measurements,
+    so the viscous term retains real structural information.
+  * beta_F adds the nonlinear inertial contribution when measured Delta-p(Q)
+    curves require it.
+  * The two contributions can be calibrated separately using several imposed
+    flow rates.
+  * The model remains algebraic in one dimension; no momentum PDE or CFD mesh
+    is needed.
+
+Classical Ergun remains a useful baseline. Its inertial coefficient can provide
+an initial estimate:
+
+    beta_F,Ergun = 1.75*(1-epsilon)/(epsilon^3*d_eff).
+
+Do not fit K and beta_F from a single pressure-flow point. Use several flow
+rates and fit Delta-p = c1*Q + c2*Q^2. If the quadratic term is not statistically
+resolvable, use Darcy or fix beta_F from PNM/Ergun and calibrate only K.
+
+
+5. FINES RELEASE, DEPOSITION, AND BLOCKAGE
+------------------------------------------
+
+Initial inventories:
+
+    available_fines_initial_kg_m3
+    mobile_concentration_initial_kg_m3_liquid
+    deposited_fines_initial_kg_m3
+
+Release:
+
+    R_rel = k_rel*m_a*(abs(q)/q_ref)^a_r
+
+Parameters are release_rate_s, release_reference_velocity_m_s, and
+release_flow_exponent. For an identifiable first calibration, fix a_r = 1 and
+fit the releasable inventory and release rate using early cup-fines data.
+
+Deposition:
+
+    R_dep = k_dep*chi(z)*abs(q)*c*max(1-m_d/m_cap, 0)
+
+Parameters are deposition_coefficient_m_inv, deposit_capacity_kg_m3,
+outlet_capture_multiplier, and outlet_capture_decay_length_m. Keep
+outlet_capture_multiplier = 1 unless CT shows an additional outlet-localized
+capture tendency not already reproduced by K0(z) and PNM transport.
+
+Deposits reduce porosity. Their effect on permeability is selected with:
+
+    "permeability_model": "exponential"
+    "permeability_model": "kozeny_carman"
+    "permeability_model": "pnm_table"
+
+For pnm_table provide increasing deposit values and positive K/K0 ratios:
+
+    "pnm_deposit_kg_m3": [0, 5, 10, 18],
+    "pnm_permeability_ratio": [1.0, 0.72, 0.31, 0.04]
+
+
+6. MODIFIED DETACHMENT AND WASHOUT MODEL
+----------------------------------------
+
+The model separates two mechanisms.
+
+Step 1: hydraulic detachment
+
+    R_det,* = k_det*m_d*max(G/G_crit - 1, 0)^b
+
+Step 2: successful geometric escape
+
+    R_wash = P_escape(d_f/d_h) * R_det,*
+
+Only R_wash is transferred to the mobile state. Detached fines that cannot
+escape are treated as immediately recaptured in the same cell. This avoids
+conflating bond/adhesion failure with the ability to pass downstream pores.
+
+Geometry parameters:
+
+    fine_particle_diameter_m
+    coarse_effective_diameter_m
+    particle_sphericity
+    initial_hydraulic_diameter_profile_m
+    pnm_hydraulic_diameter_ratio
+
+If no CT/PNM hydraulic-diameter profile is supplied, the initial value is
+
+    d_h,0 = (2/3)*phi_s*d_eff*epsilon0/(1-epsilon0).
+
+The default evolution follows the changing porosity. Alternatively,
+pnm_hydraulic_diameter_ratio can provide d_h/d_h,0 versus the same
+pnm_deposit_kg_m3 grid.
+
+Escape models:
+
+    "washout_escape_model": "unity"
+        Every hydraulically detached fine remobilizes. This reproduces the old
+        size-independent behavior.
+
+    "washout_escape_model": "logistic"
+        P_escape = 1/[1+exp(s*(d_f/d_h-lambda_c))]. Use
+        escape_ratio_midpoint = lambda_c and escape_ratio_steepness = s.
+
+    "washout_escape_model": "pnm_table"
+        Interpolate pnm_escape_probability versus pnm_size_ratio. This is the
+        preferred final closure.
+
+For the PNM table, simulate particles sampled from the measured PSD, vary
+particle-to-throat or particle-to-hydraulic-diameter ratio and pressure
+gradient, and record the fraction that leaves the network after detachment.
+Use PNM to determine the shape of P_escape; use pressure-pulse experiments to
+calibrate the remaining detachment scale and threshold.
+
+
+7. LEVEL-1 BASKET MODEL
+-----------------------
+
+basket_sieve_resistance_pa_s_m3
+    Constant clean-basket hydraulic resistance. Determine from empty-basket
+    water tests over several flows.
+
+basket_fines_retention_fraction
+    Constant fraction of puck-outlet fines retained by the basket. The rest is
+    reported as cup fines. Determine with suspension tests of known PSD or by
+    measuring basket-retained and cup fines separately.
+
+At level 1, retained mass does not change resistance and cannot detach later.
+
+
+8. CT, PSD, AND PNM INPUTS
+--------------------------
+
+initial_porosity_profile
+    Connected axial porosity from segmented CT; empty means uniform porosity.
+
+initial_permeability_profile_m2
+    Axial permeability from PNM; empty means uniform permeability.
+
+initial_hydraulic_diameter_profile_m
+    CT/PNM hydraulic diameter, preferably based on 4*void volume/wetted area.
+
+The Bora-Briesen five-parameter PSD is measured input, not a group of free
+calibration parameters. It consists of one mixture weight and two parameters
+for each component distribution. Use the reconstructed volume PSD q3(d) to
+calculate the fines fraction and conditional diameters. Do not automatically
+equate the mixture weight with the fines fraction because the two distributions
+can overlap.
+
+For one effective fines population, use the PSD to determine representative
+fine_particle_diameter_m and coarse_effective_diameter_m, and use the complete
+PSD when generating PNM capture/escape tables. Multiple transported size
+classes are only needed when predicting the PSD reaching the cup.
+
+
+9. CALIBRATION CATEGORIES AND PROCEDURE
+---------------------------------------
+
+A. Directly measured and fixed
+
+Parameters:
+    length_m, diameter_m, viscosity_pa_s, fluid_density_kg_m3,
+    fine_particle_diameter_m, coarse_effective_diameter_m, initial fines mass.
+
+Method:
+    Geometry and dose measurements; water temperature/property tables; fitted
+    five-parameter laser-diffraction PSD. Convert PSD fractions to initial mass
+    using dose and puck bulk volume. Retain a separate releasable fraction
+    because not every PSD-defined fine necessarily becomes mobile.
+
+B. CT-derived structure
+
+Parameters/fields:
+    initial_porosity_profile, initial_hydraulic_diameter_profile_m, deposit
+    location, structural change between interrupted shots.
+
+Method:
+    Segment solid and connected void by axial slab. Calculate connected
+    porosity and d_h = 4*V_void/A_wetted. Quantify segmentation and voxel-size
+    uncertainty. Interrupted shots should be replicated because they are not
+    repeated scans of exactly the same evolving puck.
+
+C. PNM-derived closures
+
+Parameters/tables:
+    initial_permeability_profile_m2, pnm_permeability_ratio,
+    pnm_hydraulic_diameter_ratio, axial_dispersion_m2_s,
+    deposition_coefficient_m_inv, pnm_escape_probability.
+
+Method:
+    Solve creeping flow on CT-derived networks for K0(z). Add particles sampled
+    from the measured PSD and calculate deposition, breakthrough, conductance
+    loss, and escape probability. Export lookup tables rather than fitting all
+    effects again in the 1D solver. Scale the overall PNM resistance to an
+    independent bulk low-flow experiment if necessary.
+
+D. Hydraulic experiments
+
+Parameters:
+    overall K scale, forchheimer_coefficient_m_inv or its axial profile,
+    basket_sieve_resistance_pa_s_m3.
+
+Method:
+    Perform clean/early-puck Delta-p(Q) measurements at several imposed flows.
+    Fit the linear and quadratic contributions. A low-flow point constrains K;
+    a broad flow range is required to identify beta_F. Determine basket
+    resistance separately using an empty basket.
+
+E. Machine/controller characterization
+
+Parameters:
+    pump_flow_max_m3_s, pump_time_constant_s, pressure_setpoint_pa, PI gains.
+
+Method:
+    Record pressure and flow response without coffee and with known hydraulic
+    resistances. Fit pump cap and lag before calibrating puck kinetics. PI gains
+    should describe the actual machine only if it actively regulates pressure.
+
+F. Dynamic fines experiments
+
+Parameters:
+    releasable initial fraction, release_rate_s, detachment_rate_s,
+    critical_pressure_gradient_pa_m, and basket_fines_retention_fraction.
+
+Method:
+    Use time-resolved cup-fines mass, turbidity and preferably outlet PSD,
+    together with pressure and flow. Pressure steps/pulses are especially useful
+    for G_crit and k_det. Measure basket-retained mass separately to prevent
+    basket retention from compensating for puck deposition.
+
+Calibration order:
+
+    1. Fix geometry, fluid properties, dose and PSD.
+    2. Insert CT porosity/hydraulic-diameter profiles.
+    3. Determine K and beta_F from pressure-flow tests.
+    4. Import PNM blockage, dispersion and escape tables.
+    5. Characterize basket and machine independently.
+    6. Fit release to early fines washout.
+    7. Fit detachment to pressure-pulse and later washout data.
+    8. Validate against withheld pucks/grind settings.
+
+Do not fit every parameter simultaneously. Pressure and flow alone cannot
+separate release, deposition, permeability loss, detachment, and basket capture.
+
+
+10. OUTPUT FILES
+----------------
+
+*_timeseries.csv
+    Hydraulic histories, fines rates and cumulative masses, blockage metrics,
+    separate viscous and Forchheimer pressure contributions, maximum pressure
+    gradient, minimum hydraulic diameter, size ratio, escape probability,
+    controller state and mass error.
+
+*_profiles.npz
+    Full axial/time arrays, including pressure_gradient_pa_m,
+    forchheimer_coefficient_m_inv, hydraulic_diameter_m,
+    fine_to_hydraulic_diameter_ratio, and washout_escape_probability.
+
+*_summary.json
+    Compact final and maximum metrics.
+
+*_parameters.json
+    Complete parameter snapshot and reusable single-case input.
+
+*_dashboard.png
+    Existing four-panel overview.
+
+Publication figures, each in 600-dpi PNG and vector PDF:
+
+    *_hydraulic_response.(png|pdf)
+    *_fines_washout.(png|pdf)
+    *_deposited_fines.(png|pdf)
+    *_relative_permeability.(png|pdf)
+
+The standalone aspect ratio is 6.4 by 4.2 inches, suitable for manuscript
+editing and subsequent scaling.
+
+
+11. VERIFICATION
+----------------
+
+Run:
+
+    python3 -m unittest -v test_fineflow.py
+    python3 verify_fineflow.py --output-dir verification_results
+
+The suite checks exact Darcy and Darcy-Forchheimer pressure laws, nonlinear
+pressure inversion, flow continuity, mass conservation, positivity, analytical
+release, non-oscillatory advection, size-ratio washout selectivity, controller
+limits, and spatial/time refinement. Verification establishes that the stated
+equations are solved consistently; it does not validate the closures physically.
+
+
+12. IMPORTANT LIMITATIONS
+-------------------------
+
+The model is axial and cannot predict lateral channels or cracks. The present
+PSD is represented by one effective transported fines population. The level-1
+basket cannot clog or release retained fines. Pressure-dependent bed compaction,
+swelling, gas release, temperature variation, and soluble-coffee extraction are
+not included. "Cup fines" means particulate coffee mass, not beverage TDS or
+soluble extraction yield.

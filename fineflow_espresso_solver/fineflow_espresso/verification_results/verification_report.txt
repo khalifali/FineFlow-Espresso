@@ -1,0 +1,83 @@
+FINEFLOW-ESPRESSO NUMERICAL VERIFICATION REPORT
+===============================================
+
+Overall: 17/17 checks passed
+
+This report verifies selected numerical properties of the implementation.
+It does not validate the physical model or parameter values against data.
+
+[PASS] Uniform-bed Darcy pressure
+       value = 1.5378926e-16 relative error
+       criterion/reference = 1e-12 relative error
+       Numerical pressure drop versus the exact Darcy solution.
+
+[PASS] Superficial-velocity continuity
+       value = 0 relative range
+       criterion/reference = 1e-14 relative range
+       Constant-area incompressible 1D flow must have one velocity in every cell.
+
+[PASS] Finite nonnegative pore velocity
+       value = 0.0010513604 m/s minimum
+       criterion/reference = 0 m/s minimum
+
+[PASS] Uniform-bed Darcy-Forchheimer pressure
+       value = 0 relative error
+       criterion/reference = 1e-12 relative error
+       Numerical pressure drop versus the exact linear-plus-quadratic law.
+
+[PASS] Darcy-Forchheimer pressure inversion
+       value = 0 relative error
+       criterion/reference = 1e-12 relative error
+       The positive scalar root must reproduce the prescribed total pressure.
+
+[PASS] Size-ratio washout selectivity
+       value = 7.9999931 kg/m3 difference
+       criterion/reference = 0 kg/m3 difference
+       Larger fines must remain more strongly trapped at equal hydraulic loading.
+
+[PASS] Global fines conservation
+       value = 7.3278467e-16 relative error
+       criterion/reference = 1e-10 relative error
+
+[PASS] Nonnegative fines states
+       value = 0 kg/m3 minimum
+       criterion/reference = -1e-12 kg/m3 minimum
+
+[PASS] Permeability does not exceed K0
+       value = 0 excess ratio
+       criterion/reference = 1e-12 excess ratio
+
+[PASS] Porosity lower bound
+       value = 0.34290012 minimum
+       criterion/reference = 0.08 minimum
+
+[PASS] Analytical release ODE
+       value = 1.5543122e-15 maximum normalized error
+       criterion/reference = 0.003 maximum normalized error
+
+[PASS] Pure-advection boundedness/TVD
+       value = 0 absolute
+       criterion/reference = 1e-10 absolute
+       First-order upwind transport should create no new oscillatory extrema.
+
+[PASS] Spatial refinement convergence
+       value = 0.028998585 max relative difference
+       criterion/reference = 0.08 max relative difference
+       Difference of the penultimate resolution from the finest computed result.
+
+[PASS] Temporal refinement convergence
+       value = 0.004511085 max relative difference
+       criterion/reference = 0.08 max relative difference
+       Difference of the penultimate resolution from the finest computed result.
+
+[PASS] PI reaches attainable pressure
+       value = 0.050962993 bar error
+       criterion/reference = 0.1 bar error
+
+[PASS] PI respects pump-flow cap
+       value = 0 mL/s excess
+       criterion/reference = 1e-10 mL/s excess
+
+[PASS] Coarse case remains below target at cap
+       value = 0.82006114 bar
+       criterion/reference = 9 bar
