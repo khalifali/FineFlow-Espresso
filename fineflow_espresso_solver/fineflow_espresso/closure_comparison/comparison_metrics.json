@@ -1,0 +1,142 @@
+{
+  "normalization": "max absolute difference divided by maximum absolute reference value across all saved times/cells",
+  "darcy_vs_forchheimer": {
+    "pressure_drop_pa": {
+      "max_absolute_difference": 0.02033902972470969,
+      "max_difference_over_reference_peak": 2.1497318289162062e-08
+    },
+    "flow_rate_m3_s": {
+      "max_absolute_difference": 2.9642159965301447e-13,
+      "max_difference_over_reference_peak": 2.910240057556069e-07
+    },
+    "cumulative_cup_mass_kg": {
+      "max_absolute_difference": 7.295609801775526e-13,
+      "max_difference_over_reference_peak": 1.82708463060692e-08
+    },
+    "deposited_kg_m3": {
+      "max_absolute_difference": 6.586354621695989e-07,
+      "max_difference_over_reference_peak": 4.603707659040617e-08
+    },
+    "permeability_m2": {
+      "max_absolute_difference": 8.883988409718271e-22,
+      "max_difference_over_reference_peak": 8.883988409718272e-08
+    }
+  },
+  "kozeny_carman_vs_exponential": {
+    "pressure_drop_pa": {
+      "max_absolute_difference": 33213.05128121853,
+      "max_difference_over_reference_peak": 0.035104502573737886
+    },
+    "flow_rate_m3_s": {
+      "max_absolute_difference": 8.470769882159863e-07,
+      "max_difference_over_reference_peak": 0.831652183048025
+    },
+    "cumulative_cup_mass_kg": {
+      "max_absolute_difference": 0.0003067102257914047,
+      "max_difference_over_reference_peak": 7.681133603874126
+    },
+    "deposited_kg_m3": {
+      "max_absolute_difference": 8.363975321116738,
+      "max_difference_over_reference_peak": 0.5846222889873613
+    },
+    "permeability_m2": {
+      "max_absolute_difference": 7.100054971213651e-15,
+      "max_difference_over_reference_peak": 0.7100054971213651
+    }
+  },
+  "summaries": {
+    "forchheimer_exponential": {
+      "control_mode": "pi",
+      "hydraulic_model": "darcy_forchheimer",
+      "washout_escape_model": "logistic",
+      "duration_s": 60.0,
+      "initial_flow_rate_ml_s": 0.0,
+      "final_flow_rate_ml_s": 0.045354884782654946,
+      "maximum_flow_rate_ml_s": 1.0185469026288516,
+      "pump_flow_cap_ml_s": 10.833333333333334,
+      "initial_pressure_drop_bar": 0.0,
+      "final_pressure_drop_bar": 8.990613151079625,
+      "maximum_pressure_drop_bar": 9.46119392713447,
+      "final_puck_pressure_drop_bar": 8.990159602231797,
+      "final_forchheimer_pressure_drop_bar": 5.881890510685468e-09,
+      "maximum_forchheimer_fraction_of_puck_pressure": 3.3533290142570305e-07,
+      "final_basket_sieve_pressure_drop_bar": 0.00045354884782654943,
+      "controller_saturated_fraction": 0.0,
+      "final_effective_permeability_m2": 3.818922048193235e-16,
+      "minimum_local_permeability_ratio": 0.012632649950854776,
+      "maximum_deposit_kg_m3": 14.306630892954098,
+      "maximum_pressure_gradient_MPa_m": 139.4108681659059,
+      "final_minimum_hydraulic_diameter_um": 76.58261109681746,
+      "final_maximum_fine_to_hydraulic_diameter_ratio": 0.32644486316083476,
+      "final_mean_washout_escape_probability": 0.6446512626108929,
+      "final_blockage_position_mm_from_inlet": 19.75,
+      "cumulative_puck_outlet_fines_g": 0.061431281789756445,
+      "cumulative_basket_retained_fines_g": 0.021500948626414725,
+      "cumulative_cup_fines_g": 0.039930333163341616,
+      "maximum_relative_mass_balance_error": 1.3190124134180036e-15,
+      "permeability_model": "exponential"
+    },
+    "darcy_exponential": {
+      "control_mode": "pi",
+      "hydraulic_model": "darcy",
+      "washout_escape_model": "logistic",
+      "duration_s": 60.0,
+      "initial_flow_rate_ml_s": 0.0,
+      "final_flow_rate_ml_s": 0.0453548842934477,
+      "maximum_flow_rate_ml_s": 1.0185471829237904,
+      "pump_flow_cap_ml_s": 10.833333333333334,
+      "initial_pressure_drop_bar": 0.0,
+      "final_pressure_drop_bar": 8.990613151230091,
+      "maximum_pressure_drop_bar": 9.461194105073469,
+      "final_puck_pressure_drop_bar": 8.990159602387157,
+      "final_forchheimer_pressure_drop_bar": 0.0,
+      "maximum_forchheimer_fraction_of_puck_pressure": 0.0,
+      "final_basket_sieve_pressure_drop_bar": 0.00045354884293447706,
+      "controller_saturated_fraction": 0.0,
+      "final_effective_permeability_m2": 3.818922004436988e-16,
+      "minimum_local_permeability_ratio": 0.012632649813650487,
+      "maximum_deposit_kg_m3": 14.30663092849947,
+      "maximum_pressure_gradient_MPa_m": 139.4108681276314,
+      "final_minimum_hydraulic_diameter_um": 76.58261107810064,
+      "final_maximum_fine_to_hydraulic_diameter_ratio": 0.326444863240618,
+      "final_mean_washout_escape_probability": 0.6446512623079019,
+      "final_blockage_position_mm_from_inlet": 19.75,
+      "cumulative_puck_outlet_fines_g": 0.061431282173628296,
+      "cumulative_basket_retained_fines_g": 0.021500948760769918,
+      "cumulative_cup_fines_g": 0.03993033341285843,
+      "maximum_relative_mass_balance_error": 5.862277392968905e-16,
+      "permeability_model": "exponential"
+    },
+    "darcy_kozeny_carman": {
+      "control_mode": "pi",
+      "hydraulic_model": "darcy",
+      "washout_escape_model": "logistic",
+      "duration_s": 60.0,
+      "initial_flow_rate_ml_s": 0.0,
+      "final_flow_rate_ml_s": 0.892431872509434,
+      "maximum_flow_rate_ml_s": 1.1812566207024324,
+      "pump_flow_cap_ml_s": 10.833333333333334,
+      "initial_pressure_drop_bar": 0.0,
+      "final_pressure_drop_bar": 9.000310183526587,
+      "maximum_pressure_drop_bar": 9.141472213203416,
+      "final_puck_pressure_drop_bar": 8.991385864801492,
+      "final_forchheimer_pressure_drop_bar": 0.0,
+      "maximum_forchheimer_fraction_of_puck_pressure": 0.0,
+      "final_basket_sieve_pressure_drop_bar": 0.008924318725094341,
+      "controller_saturated_fraction": 0.0,
+      "final_effective_permeability_m2": 7.513331720478618e-15,
+      "minimum_local_permeability_ratio": 0.7226381469350156,
+      "maximum_deposit_kg_m3": 17.999999986153668,
+      "maximum_pressure_gradient_MPa_m": 50.55965583184399,
+      "final_minimum_hydraulic_diameter_um": 74.65437788735169,
+      "final_maximum_fine_to_hydraulic_diameter_ratio": 0.334876543177726,
+      "final_mean_washout_escape_probability": 0.5890951587429096,
+      "final_blockage_position_mm_from_inlet": 19.75,
+      "cumulative_puck_outlet_fines_g": 0.5332931680065591,
+      "cumulative_basket_retained_fines_g": 0.1866526088022956,
+      "cumulative_cup_fines_g": 0.3466405592042631,
+      "maximum_relative_mass_balance_error": 5.862277392968905e-16,
+      "permeability_model": "kozeny_carman"
+    }
+  }
+}

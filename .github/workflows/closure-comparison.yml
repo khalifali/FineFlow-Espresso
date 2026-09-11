@@ -1,0 +1,28 @@
+name: Closure comparison
+on:
+  push:
+    branches: [study/darcy-kozeny-carman]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: self-hosted
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - name: Isolated Python environment
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install -r fineflow_espresso_solver/fineflow_espresso/requirements.txt
+      - name: Unit tests
+        run: .venv/bin/python -m unittest discover -s fineflow_espresso_solver/fineflow_espresso -p test_fineflow.py
+      - name: Reproduce controlled comparisons
+        run: .venv/bin/python fineflow_espresso_solver/fineflow_espresso/compare_closures.py
+      - name: Save numerical evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: closure-comparison
+          path: fineflow_espresso_solver/fineflow_espresso/closure_comparison/

@@ -50,8 +50,7 @@ exported from pore-network calculations. Optional axial arrays
 `initial_porosity_profile` and `initial_permeability_profile_m2` accept one
 value per finite-volume cell, allowing depth-resolved CT/PNM inputs.
 
-`hydraulic_model` selects `darcy` or `darcy_forchheimer`; the latter is the
-default. It preserves CT/PNM-derived permeability in the viscous term while
+`hydraulic_model` selects `darcy` (default) or `darcy_forchheimer`. The latter is optional. It preserves CT/PNM-derived permeability in the viscous term while
 adding an independently calibratable nonlinear inertial term. This retains more
 structural information than calculating the entire resistance from the Ergun
 porosity-and-effective-diameter correlation.
@@ -177,3 +176,10 @@ The axial location of blockage is an internal 1D model prediction. Global
 pressure and flow alone cannot validate its physical location. Lateral
 channeling is represented only as an effective local permeability recovery;
 the code does not predict an actual channel geometry.
+
+## Darcy selection and closure sensitivity
+
+The default solver and active `fine_puck` case now use Darcy flow. The optional
+Darcy–Forchheimer model remains available. Run `python compare_closures.py` to
+reproduce the isolated inertia comparison and the separate Kozeny–Carman study.
+See `closure_comparison/README.md` for the design, quantitative results and limits.

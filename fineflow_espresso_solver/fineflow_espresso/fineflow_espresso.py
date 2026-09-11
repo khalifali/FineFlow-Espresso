@@ -80,7 +80,7 @@ class ModelParameters:
 
     # Hydraulic pressure-gradient closure.  For Darcy-Forchheimer,
     # G = mu*q/K + rho*beta_F*|q|*q.
-    hydraulic_model: HydraulicModel = "darcy_forchheimer"
+    hydraulic_model: HydraulicModel = "darcy"
     forchheimer_coefficient_m_inv: float = 1.0e5
     initial_forchheimer_profile_m_inv: tuple[float, ...] = ()
     forchheimer_permeability_exponent: float = 0.0
@@ -358,6 +358,7 @@ class SimulationResult:
         return {
             "control_mode": p.control_mode,
             "hydraulic_model": p.hydraulic_model,
+            "permeability_model": p.permeability_model,
             "washout_escape_model": p.washout_escape_model,
             "duration_s": float(self.time_s[-1]),
             "initial_flow_rate_ml_s": float(self.flow_rate_m3_s[0] * 1e6),
