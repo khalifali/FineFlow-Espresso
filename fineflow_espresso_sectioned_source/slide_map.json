@@ -1,0 +1,212 @@
+[
+  {
+    "slide": 1,
+    "section": "",
+    "title": ""
+  },
+  {
+    "slide": 2,
+    "section": "",
+    "title": "Presentation outline"
+  },
+  {
+    "slide": 3,
+    "section": "Motivation and research question",
+    "title": "Section divider"
+  },
+  {
+    "slide": 4,
+    "section": "Motivation and research question",
+    "title": "Motivation and research question"
+  },
+  {
+    "slide": 5,
+    "section": "Physical mechanisms and model scope",
+    "title": "Section divider"
+  },
+  {
+    "slide": 6,
+    "section": "Physical mechanisms and model scope",
+    "title": "Flow and fines inside the coffee bed"
+  },
+  {
+    "slide": 7,
+    "section": "Physical mechanisms and model scope",
+    "title": "Scope of the 1D continuum model"
+  },
+  {
+    "slide": 8,
+    "section": "Physical mechanisms and model scope",
+    "title": "Fines exchange locally and leave through the outlet"
+  },
+  {
+    "slide": 9,
+    "section": "Governing equations and closures",
+    "title": "Section divider"
+  },
+  {
+    "slide": 10,
+    "section": "Governing equations and closures",
+    "title": "Continuum balance over an infinitesimal slice"
+  },
+  {
+    "slide": 11,
+    "section": "Governing equations and closures",
+    "title": "Continuum equations and optional surface loading"
+  },
+  {
+    "slide": 12,
+    "section": "Governing equations and closures",
+    "title": "Release and capture are constitutive hypotheses"
+  },
+  {
+    "slide": 13,
+    "section": "Governing equations and closures",
+    "title": "Deposit remobilization and local pore accessibility"
+  },
+  {
+    "slide": 14,
+    "section": "Governing equations and closures",
+    "title": "The PSD is reduced to quantities used by the 1D closures"
+  },
+  {
+    "slide": 15,
+    "section": "Governing equations and closures",
+    "title": "Two alternative closures for the same permeability"
+  },
+  {
+    "slide": 16,
+    "section": "Governing equations and closures",
+    "title": "Why the illustrative model used an exponential law"
+  },
+  {
+    "slide": 17,
+    "section": "Governing equations and closures",
+    "title": "Darcy flow and the permeability closure have different roles"
+  },
+  {
+    "slide": 18,
+    "section": "Governing equations and closures",
+    "title": "Operating conditions and basket resistance"
+  },
+  {
+    "slide": 19,
+    "section": "Governing equations and closures",
+    "title": "Boundary conditions for clean feed and an open outlet"
+  },
+  {
+    "slide": 20,
+    "section": "Numerical solution and verification",
+    "title": "Section divider"
+  },
+  {
+    "slide": 21,
+    "section": "Numerical solution and verification",
+    "title": "Darcy flow follows from the current hydraulic resistance"
+  },
+  {
+    "slide": 22,
+    "section": "Numerical solution and verification",
+    "title": "Velocity and pressure profiles follow from Darcy"
+  },
+  {
+    "slide": 23,
+    "section": "Numerical solution and verification",
+    "title": "The finite-volume method enforces flux balance cell by cell"
+  },
+  {
+    "slide": 24,
+    "section": "Numerical solution and verification",
+    "title": "Why finite volumes for fines transport?"
+  },
+  {
+    "slide": 25,
+    "section": "Numerical solution and verification",
+    "title": "The smallest timescale limits the numerical step"
+  },
+  {
+    "slide": 26,
+    "section": "Numerical solution and verification",
+    "title": "Coupled physics and its numerical update"
+  },
+  {
+    "slide": 27,
+    "section": "Numerical solution and verification",
+    "title": "Numerical verification and physical validation"
+  },
+  {
+    "slide": 28,
+    "section": "Illustrative results and model sensitivity",
+    "title": "Section divider"
+  },
+  {
+    "slide": 29,
+    "section": "Illustrative results and model sensitivity",
+    "title": "Darcy gives practically the same results"
+  },
+  {
+    "slide": 30,
+    "section": "Illustrative results and model sensitivity",
+    "title": "The illustrative case develops strong viscous blockage"
+  },
+  {
+    "slide": 31,
+    "section": "Illustrative results and model sensitivity",
+    "title": "The model distinguishes puck washout from fines in the cup"
+  },
+  {
+    "slide": 32,
+    "section": "Illustrative results and model sensitivity",
+    "title": "The axial fields locate the effective blocking region"
+  },
+  {
+    "slide": 33,
+    "section": "Illustrative results and model sensitivity",
+    "title": "Permeability closure strongly changes the flow response"
+  },
+  {
+    "slide": 34,
+    "section": "Illustrative results and model sensitivity",
+    "title": "Kozeny--Carman predicts weaker permeability loss"
+  },
+  {
+    "slide": 35,
+    "section": "Illustrative results and model sensitivity",
+    "title": "The permeability closure also changes cup fines"
+  },
+  {
+    "slide": 36,
+    "section": "Calibration and validation strategy",
+    "title": "Section divider"
+  },
+  {
+    "slide": 37,
+    "section": "Calibration and validation strategy",
+    "title": "Calibration begins with independently measured structure"
+  },
+  {
+    "slide": 38,
+    "section": "Calibration and validation strategy",
+    "title": "Experiments to distinguish competing kinetic models"
+  },
+  {
+    "slide": 39,
+    "section": "Calibration and validation strategy",
+    "title": "Next comparison: redistribution versus washout"
+  },
+  {
+    "slide": 40,
+    "section": "Conclusions and next steps",
+    "title": "Section divider"
+  },
+  {
+    "slide": 41,
+    "section": "Conclusions and next steps",
+    "title": "Conclusions and next steps"
+  },
+  {
+    "slide": 42,
+    "section": "Conclusions and next steps",
+    "title": "References and model documentation"
+  }
+]
