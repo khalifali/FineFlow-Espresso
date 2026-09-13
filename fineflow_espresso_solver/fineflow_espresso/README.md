@@ -6,8 +6,8 @@ espresso puck. It requires neither CFD nor a pore-network model.
 
 The code is a starting framework. The included parameter values are chosen to
 produce interpretable behavior and are **not calibrated espresso parameters**.
-The default case uses a flow-actuated PI controller that targets 9 bar but
-cannot exceed the configured pump-flow capacity.
+The default case holds a constant 9 bar across the puck plus basket.
+Optional PI control targets 9 bar with a finite pump-flow capacity.
 
 Complete model and numerical documentation is provided in
 `documentation/fineflow_espresso_technical_report.tex` and its compiled PDF.
@@ -55,10 +55,11 @@ adding an independently calibratable nonlinear inertial term. This retains more
 structural information than calculating the entire resistance from the Ergun
 porosity-and-effective-diameter correlation.
 
-`G = |dp/dz|` is the local pressure gradient. Three operating modes are
+`G = |dp/dz|` is the local pressure gradient. Four operating modes are
 available:
 
-- `pi` (default): the PI controller adjusts flow to target 9 bar;
+- `constant` (default): fixed `pressure_drop_pa`, with no pulse or pump cap;
+- `pi`: the PI controller adjusts flow to target 9 bar;
 - `pressure`: an ideal prescribed pressure, optionally including a pulse;
 - `flow`: an ideal prescribed flow, with pressure predicted from resistance.
 
@@ -198,7 +199,45 @@ Finite-volume conservation follows from shared face fluxes, matched transfers
 between fines inventories, and consistent basket/outlet accounting. It is
 checked numerically and should not be confused with experimental validation.
 
-The committed `results/` files describe an earlier run; inspect their parameter
-snapshot before comparing them with current defaults. The technical report now
+The committed `results/` files now describe the constant-pressure fine-puck baseline.
+The frozen `closure_comparison/` study retains its original PI settings. The technical report now
 uses the controlled study in `closure_comparison/`. Manual section 12 gives
 reproduction and LaTeX build commands.
+
+
+## Constant pressure versus PI
+
+```bash
+# Ideal fixed total pressure: no pulse and no pump-flow cap
+python3 fineflow_espresso.py --config case_config.json --pressure-bar 9 --case-name fine_constant
+# Same puck, with a capped flow actuator and PI pressure target
+python3 fineflow_espresso.py --config case_config.json --pi-pressure-bar 9 --case-name fine_pi
+# Matched fine/coarse comparison with complete result and parameter snapshots
+python3 compare_pressure_modes.py
+```
+
+`--constant-pressure-bar` is an alias for `--pressure-bar`. Both now select
+`control_mode: "constant"`. Existing JSON `control_mode: "pressure"` retains
+its legacy pulse behavior; use `pressure_pulse_duration_s: 0` to disable it.
+Existing JSON `control_mode: "pi"` remains unchanged. A JSON file without a
+mode now inherits the constant-pressure default.
+
+The pressure is inlet minus downstream-of-basket pressure. With the outlet
+reference at zero, puck-exit pressure is `Q * basket_sieve_resistance_pa_s_m3`.
+Set basket resistance to zero when prescribing exactly 9 bar across the puck.
+Constant mode computes Q = delta_p / (R_puck + R_basket) at each step.
+It assumes the source can supply the required flow, even above the PI pump cap.
+The legacy `pressure` mode supports a rectangular pulse, not an arbitrary
+measured pressure trace.
+
+Compare a fixed 9 bar run only with the corresponding 9 bar experimental
+interval. For a lower, approximately steady measured pressure, use that value
+with `--pressure-bar`. A changing experimental pressure requires a prescribed
+history extension or a calibrated machine model. Selecting PI alone does not
+make an experimental comparison valid. Pump capacity, lag and gains must be
+identified independently. Saturated single-phase flow is assumed throughout;
+a pressure ramp does not model initial wetting.
+
+See `pressure_comparison/README.md` and the updated sectioned deck for the
+matched comparison. The earlier PI closure comparison is retained and labeled
+separately so pressure-mode and permeability-law effects are not confounded.

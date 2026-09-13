@@ -1,3 +1,15 @@
+PRESSURE MODE UPDATE
+====================
+Default: control_mode = "constant", pressure_drop_pa = 900000 (Pa).
+This fixes pressure across puck + basket without any pulse or pump cap.
+Optional: control_mode = "pi", pressure_setpoint_pa = 900000 (Pa).
+PI evolves capped pump flow; pressure follows the current resistance.
+Legacy "pressure" mode retains the optional rectangular pulse.
+CLI: --pressure-bar 9 (constant), or --pi-pressure-bar 9 (PI).
+Run python3 compare_pressure_modes.py for the matched study.
+For an experiment below 9 bar, supply its measured steady pressure instead.
+The following older guide's PI examples remain optional, not the default.
+
 FINEFLOW-ESPRESSO: USER AND CALIBRATION MANUAL
 ================================================
 

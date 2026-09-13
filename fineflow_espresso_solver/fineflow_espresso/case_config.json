@@ -3,7 +3,7 @@
   "selected_case": "fine_puck",
   "cases": {
     "fine_puck": {
-      "_note": "Illustrative Darcy baseline with exponential permeability. Compare to the frozen original and Kozeny-Carman using compare_closures.py. Not experimentally calibrated.",
+      "_note": "Default constant 9 bar across puck + basket. Set control_mode to pi for capped pump control. Darcy + exponential, illustrative and uncalibrated.",
       "_calibration": {
         "measured_fixed": [
           "length_m",
@@ -38,7 +38,7 @@
           "basket_fines_retention_fraction"
         ]
       },
-      "control_mode": "pi",
+      "control_mode": "constant",
       "duration_s": 60.0,
       "length_m": 0.02,
       "diameter_m": 0.058,
@@ -92,7 +92,8 @@
       "controller_initial_flow_m3_s": 0.0,
       "output_interval_s": 0.25,
       "max_time_step_s": 0.1,
-      "cfl_safety": 0.42
+      "cfl_safety": 0.42,
+      "pressure_drop_pa": 900000
     },
     "coarse_puck": {
       "_note": "Inactive while selected_case is 'fine_puck'. Coarse load-bearing particles with a smaller but nonzero fines population.",

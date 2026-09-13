@@ -248,11 +248,39 @@ class FineFlowTests(unittest.TestCase):
         self.assertLess(result.pressure_drop_pa[-1], 0.5 * p.pressure_setpoint_pa)
         self.assertTrue(result.controller_saturated[-1])
 
+    def test_constant_pressure_ignores_pulse_and_pump_cap(self):
+        p = self.short_case(
+            control_mode="constant", hydraulic_model="darcy",
+            permeability_initial_m2=1e-12,
+            initial_permeability_profile_m2=tuple(np.linspace(1e-12, 2e-12, 24)),
+            pressure_pulse_start_s=0.5, pressure_pulse_duration_s=2.0,
+            basket_sieve_resistance_pa_s_m3=1e9,
+            available_fines_initial_kg_m3=0.0,
+            release_rate_s=0.0, deposition_coefficient_m_inv=0.0,
+            detachment_rate_s=0.0,
+        )
+        result = simulate(p)
+        resistance = p.viscosity_pa_s * p.dz_m * np.sum(
+            1 / np.array(p.initial_permeability_profile_m2)) / p.area_m2
+        expected_flow = p.pressure_drop_pa / (resistance + p.basket_sieve_resistance_pa_s_m3)
+        np.testing.assert_allclose(result.pressure_drop_pa, p.pressure_drop_pa, rtol=1e-12)
+        np.testing.assert_allclose(result.flow_rate_m3_s, expected_flow, rtol=1e-12)
+        self.assertGreater(expected_flow, p.pump_flow_max_m3_s)
+        self.assertFalse(np.any(result.controller_saturated))
+        self.assert_mass_conserved(result)
+
+    def test_constant_pressure_with_evolving_deposits(self):
+        p = self.short_case(control_mode="constant", duration_s=10.0)
+        result = simulate(p)
+        np.testing.assert_allclose(result.pressure_drop_pa, p.pressure_drop_pa, rtol=1e-12)
+        self.assertLess(result.flow_rate_m3_s[-1], result.flow_rate_m3_s[0])
+        self.assert_mass_conserved(result)
+
     def test_named_case_config_and_prefixed_outputs(self):
         config = Path(__file__).with_name("case_config.json")
         case_name, parameters = _parameters_from_json(config)
         self.assertEqual(case_name, "fine_puck")
-        self.assertEqual(parameters.control_mode, "pi")
+        self.assertEqual(parameters.control_mode, "constant")
 
         short_parameters = replace(
             parameters,

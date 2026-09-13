@@ -384,6 +384,7 @@ reported destination of fines but does not feed back into $R_{\mathrm s}$.
 \subsection{Hydraulic operating modes}
 
 \begin{description}[style=nextline,leftmargin=2.6cm]
+\item[Constant mode] The default fixes total pressure without a pulse. Flow follows the current resistance without a pump cap.
 \item[Flow mode] $Q(t)$ is prescribed and Eq.~\eqref{eq:series} predicts total pressure.
 \item[Pressure mode] Total pressure is prescribed and the positive root of the
 selected resistance law gives $Q$ (linear for Darcy, quadratic with inertia). An optional pressure pulse can
@@ -713,8 +714,8 @@ is zero, the script records a null normalized value. Peak normalization avoids
 pointwise division by zero at startup. These metrics are neither RMSE nor
 experimental errors. Parameter snapshots, CSV histories, NPZ profiles and
 single-axis PDF/PNG comparison figures are committed with the study.
-The older \code{results/} directory is an archived run, identified by its own
-parameter snapshot; it should not be described as a fresh run of the new defaults.
+The \code{results/} directory now contains the constant-pressure baseline.
+The closure comparison above retains its original PI settings.
 
 \section{Numerical verification}
 
@@ -810,4 +811,55 @@ folders. Re-run the Python cases before recompiling when updated figures or
 values are required. Numerical values in Table~\ref{tab:result} are currently
 entered explicitly and should be updated when the reference case changes.
 
+
+\clearpage
+\section{Constant pressure and optional PI control: updated study}
+The default operating mode is now \texttt{constant}. It imposes
+\texttt{pressure\_drop\_pa} across puck plus basket at every time step:
+\[
+Q(t)=\frac{\Delta p_{\mathrm{total}}}{R_{\mathrm{puck}}(t)+R_s},\qquad
+R_{\mathrm{puck}}(t)=\frac{\mu}{A}\int_0^L\frac{\mathrm dz}{K(z,t)}.
+\]
+The downstream pressure reference is zero. Pressure at the puck exit is
+$QR_s$. Set $R_s=0$ when prescribing the pressure drop across the puck alone.
+Constant mode ignores pulse settings and does not enforce a pump-flow cap.
+The existing \texttt{pi} mode retains capped flow actuation, pump lag and
+conditional integration. Legacy \texttt{pressure} mode retains its rectangular
+pulse. An arbitrary measured pressure history is not yet implemented.
+
+\subsection{Matched numerical comparison}
+For each puck, only the control mode changes. Both use Darcy with exponential
+permeability. The fine-puck duration is 60 s; the coarse-puck duration is 20 s.
+\begin{center}
+\begin{tabular}{lrrr}\toprule
+Case & Pressure [bar] & Flow [mL/s] & Cup fines [g]\\\midrule
+fine\_puck\_constant & 9.0000 & 0.04471 & 0.04023\\
+fine\_puck\_pi & 8.9906 & 0.04535 & 0.03993\\
+coarse\_puck\_constant & 9.0000 & 7.43194 & 0.05147\\
+coarse\_puck\_pi & 9.0222 & 7.77635 & 0.04993\\
+\bottomrule\end{tabular}\end{center}
+The coarse constant-pressure case initially requires 105.02 mL/s. PI is
+limited to 10.83 mL/s and reaches only 1.66 bar at 2 s. Deposits subsequently
+increase resistance enough for the target to become attainable. This case
+illustrates temporary saturation, not sustained sub-target pressure.
+The large ideal flow is not a prediction of the actual machine.
+
+\begin{center}
+\includegraphics[width=.78\linewidth]{../pressure_comparison/coarse_puck_hydraulics.pdf}
+\end{center}
+
+The earlier closure comparison in this report retains its original PI
+settings. The updated files in \texttt{results/} use constant pressure.
+Complete paired data, parameter snapshots and figures are in
+\texttt{pressure\_comparison/}; reproduce them with
+\texttt{python3 compare\_pressure\_modes.py} from the solver directory.
+All 17 unit tests pass. Maximum relative fines-mass error in the four new runs
+is below $2.1\times10^{-15}$.
+
+\subsection{Experimental use}
+A nine-bar simulation applies only to the corresponding measured pressure
+conditions. For a lower approximately steady pressure, prescribe that value.
+Changing experimental pressure requires a history extension or an independently
+calibrated machine model. PI alone does not make the comparison valid.
+The model assumes a saturated puck and does not describe initial wetting.
 \end{document}

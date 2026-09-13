@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 
 
-ControlMode = Literal["pi", "pressure", "flow"]
+ControlMode = Literal["constant", "pi", "pressure", "flow"]
 PermeabilityModel = Literal["exponential", "kozeny_carman", "pnm_table"]
 HydraulicModel = Literal["darcy", "darcy_forchheimer"]
 WashoutEscapeModel = Literal["unity", "logistic", "pnm_table"]
@@ -101,8 +101,9 @@ class ModelParameters:
     basket_sieve_resistance_pa_s_m3: float = 0.0
     basket_fines_retention_fraction: float = 0.0
 
-    # Operating condition
-    control_mode: ControlMode = "pi"
+    # Operating condition: constant never applies the legacy pressure pulse.
+    # Pressure drop is across puck + basket, relative to the downstream outlet.
+    control_mode: ControlMode = "constant"
     pressure_drop_pa: float = 9.0e5
     pressure_pulse_start_s: float = 50.0
     pressure_pulse_duration_s: float = 4.0
@@ -159,8 +160,8 @@ class ModelParameters:
         bad = [name for name, value in positive.items() if value <= 0]
         if bad:
             raise ValueError(f"Parameters must be positive: {', '.join(bad)}")
-        if self.control_mode not in ("pi", "pressure", "flow"):
-            raise ValueError("control_mode must be 'pi', 'pressure', or 'flow'")
+        if self.control_mode not in ("constant", "pi", "pressure", "flow"):
+            raise ValueError("control_mode must be 'constant', 'pi', 'pressure', or 'flow'")
         if self.permeability_model not in (
             "exponential",
             "kozeny_carman",
@@ -237,7 +238,7 @@ class ModelParameters:
                 raise ValueError("pnm_size_ratio must be strictly increasing")
             if any(value < 0 or value > 1 for value in self.pnm_escape_probability):
                 raise ValueError("pnm_escape_probability values must lie in [0, 1]")
-        if self.control_mode == "pressure" and self.pressure_drop_pa < 0:
+        if self.control_mode in ("constant", "pressure") and self.pressure_drop_pa < 0:
             raise ValueError("pressure_drop_pa must be non-negative")
         if self.control_mode == "flow" and self.flow_rate_m3_s < 0:
             raise ValueError("flow_rate_m3_s must be non-negative")
@@ -694,9 +695,10 @@ def _hydraulics(
         if controlled_flow_m3_s is None:
             raise ValueError("PI mode requires controlled_flow_m3_s")
         q = controlled_flow_m3_s / p.area_m2
-    elif p.control_mode == "pressure":
+    elif p.control_mode in ("constant", "pressure"):
         pulse_active = (
-            p.pressure_pulse_duration_s > 0
+            p.control_mode == "pressure"
+            and p.pressure_pulse_duration_s > 0
             and p.pressure_pulse_start_s <= time_s
             < p.pressure_pulse_start_s + p.pressure_pulse_duration_s
         )
@@ -1008,7 +1010,7 @@ def simulate(parameters: ModelParameters | None = None) -> SimulationResult:
         pressure_setpoint_history[index] = (
             _pressure_setpoint(p, output_times[index])
             if p.control_mode == "pi"
-            else (pressure_drop if p.control_mode == "pressure" else np.nan)
+            else (pressure_drop if p.control_mode in ("constant", "pressure") else np.nan)
         )
         controller_saturated_history[index] = (
             controller_is_saturated if p.control_mode == "pi" else False
@@ -1520,7 +1522,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--duration", type=float, help="Override duration [s].")
     parser.add_argument(
-        "--pressure-bar", type=float, help="Use pressure control at this pressure drop [bar]."
+        "--pressure-bar", "--constant-pressure-bar", type=float,
+        help="Hold this total puck + basket pressure drop [bar], without a pulse."
     )
     parser.add_argument(
         "--pi-pressure-bar",
@@ -1575,7 +1578,7 @@ def main() -> None:
     if args.pressure_bar is not None:
         parameters = replace(
             parameters,
-            control_mode="pressure",
+            control_mode="constant",
             pressure_drop_pa=args.pressure_bar * 1e5,
         )
     if args.flow_ml_s is not None:

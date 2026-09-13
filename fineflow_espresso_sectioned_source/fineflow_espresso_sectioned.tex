@@ -114,16 +114,15 @@
 \end{frame}
 
 \begin{frame}{Motivation and research question}
-\hi{Fines migration changes the hydraulic response}
+\hi{Can a 1D model reproduce the experimental response?}
 \begin{itemize}
-\item Mobile fines can accumulate in the puck or leave with the water.
-\item Deposition changes permeability and feeds back on pressure and flow.
-\item Cup collection reveals only the fines that pass both puck and basket.
+\item Predict the outlet flow rate for the measured pressure drop.
+\item Predict the amount of fines reaching the cup.
 \end{itemize}
 \medskip
-\question{How do fines redistribution and washout change flow resistance and the fines reaching the cup?}
+\question{How does fines redistribution change the hydraulic resistance and cup washout?}
 \medskip
-\small The 1D model links proposed CT structural inputs to pressure, flow and fines measurements.
+\small Darcy relates pressure to flow through permeability. Deposits change pore space and resistance. Release, capture and remobilization determine the fines distribution.
 \end{frame}
 
 \section[Model scope]{Physical mechanisms and model scope}
@@ -232,6 +231,98 @@
 \vfill
 \end{frame}
 
+\begin{frame}{Model overview: pressure, flow and fines reaching the cup}
+\centering
+\begin{tikzpicture}[
+ overview/.style={draw=tumblue,rounded corners=2pt,fill=tumlight,
+ align=center,text width=3.25cm,minimum height=.75cm,font=\footnotesize,inner sep=4pt},
+ link/.style={-{Latex[length=2mm]},thick,tumblue}]
+\node[overview] (pressure) at (0,0) {Given pressure drop\\puck + basket};
+\node[overview,fill=waterblue!18] (darcy) at (4.4,0) {Darcy hydraulics\\$Q$ and $q=Q/A$};
+\node[overview] (perm) at (8.8,0) {Permeability $K$\\basket resistance $R_s$};
+\node[overview,fill=waterblue!18,text width=3.65cm] (fines) at (4.4,-1.85)
+ {Continuum fines model\\transport and release\\deposition\\remobilization};
+\node[overview] (deposit) at (8.8,-1.85) {Deposited fines $m_d$\\and porosity $\varepsilon$};
+\node[overview] (out) at (4.4,-3.4) {Puck outlet\\$\dot M_{\mathrm{out}}=Q\,c(L,t)$};
+\node[overview,fill=modelgreen!15] (sieve) at (0,-4.25) {Sieve-retained mass\\$M_{\mathrm{sieve}}$};
+\node[overview,fill=modelgreen!15] (cup) at (8.8,-4.25) {Collected cup mass\\$M_{\mathrm{cup}}$};
+\draw[link] (pressure)--(darcy);
+\draw[link] (perm)--(darcy);
+\draw[link] (darcy)--node[right,font=\scriptsize]{flow and forcing}(fines);
+\draw[link] (fines)--(deposit);
+\draw[link] (deposit)--node[right,align=left,font=\scriptsize]{closure}(perm);
+\draw[link] (fines)--(out);
+\draw[link] (out.west)-|node[pos=.2,above,font=\scriptsize]{retained fraction $\eta_s$}(sieve.north);
+\draw[link] (out.east)-|node[pos=.2,above,font=\scriptsize]{passing fraction $1-\eta_s$}(cup.north);
+\end{tikzpicture}
+\par\smallskip\small
+Kozeny--Carman uses $\varepsilon(m_d)$ to obtain $K$.
+The exponential alternative uses $m_d$ directly.
+\end{frame}
+
+\begin{frame}{Darcy flow and the permeability closure have different roles}
+\small
+\hi{Darcy links the measured pressure drop to outlet flow}
+\[
+-\frac{\partial p}{\partial z}=\frac{\mu q}{K(z,t)},\qquad q=Q/A.
+\]
+Lower permeability $K$ means greater resistance and less flow at the same pressure drop.
+\[
+R_{\mathrm{tot}}=\frac{\mu}{A}\int_0^L\frac{\mathrm dz}{K(z,t)}+R_s,
+\qquad Q=\frac{\Delta p_{\mathrm{total}}}{R_{\mathrm{tot}}}.
+\]
+$R_s$: basket hydraulic resistance [Pa\,s\,m$^{-3}$]. $\mu$: water viscosity.
+$\Delta p_{\mathrm{total}}$: pressure drop across puck plus basket.
+\par\medskip
+\hi{Next: how do deposits change $K$?}
+\par The permeability closure describes that structural response. Fines balances then determine how the deposits evolve.
+\end{frame}
+
+\begin{frame}{Two alternative closures for the same permeability}
+\small
+Both closures supply $K$ to Darcy. Deposits reduce the available pore space.
+\[\varepsilon=\max\left(\varepsilon_0-m_d/\rho_d,\varepsilon_{\min}\right)\]
+$\rho_d$: deposit density. Capture raises $m_d$ and remobilization lowers it.
+Initial release affects porosity indirectly through later capture in this model.
+\par\smallskip
+\begin{columns}[T,onlytextwidth]
+\column{.49\textwidth}\hi{Kozeny--Carman: structural baseline}
+\[\frac{K}{K_0}=\left(\frac{\varepsilon}{\varepsilon_0}\right)^3
+\left(\frac{1-\varepsilon_0}{1-\varepsilon}\right)^2\]
+Relates permeability to porosity under fixed effective particle scale and Kozeny factor.
+\par\medskip This simplified relation may miss changes in pore connectivity and localized plugging.
+\column{.47\textwidth}\hi{Exponential: empirical comparison}
+\[\frac{K}{K_0}=\exp\left(-\beta\frac{m_d}{m_{\mathrm{cap}}}\right)\]
+Assumes a direct sensitivity to deposit loading. $\beta$ controls the imposed blockage strength.
+\par\medskip This empirical law has no coffee-data calibration here.
+\end{columns}
+\vfill\takeaway{Identical initial $K_0$. Neither closure has experimental validation.}
+\end{frame}
+
+\begin{frame}{Why the illustrative model used an exponential law}
+\small
+\hi{Motivation: represent strong blockage with a simple adjustable law}
+\par\medskip
+The hypothesis was that fines obstruct narrow flow paths, allowing a large resistance increase with a modest change in total porosity.
+\par\medskip
+The exponential form stays positive and decreases smoothly. These useful mathematical properties do not establish physical validity.
+\medskip
+\begin{columns}[c,onlytextwidth]
+\column{.45\textwidth}
+\begin{tabular}{cc}\toprule
+$m_d/m_{\mathrm{cap}}$ & $K/K_0$ at $\beta=5.5$\\\midrule
+0 & 1\\[.35em]
+0.5 & 0.064\\[.35em]
+1 & 0.0041\\\bottomrule
+\end{tabular}
+\column{.51\textwidth}
+\hi{An illustrative assumption}
+\par\medskip
+Neither the exponential law nor $\beta=5.5$ was fitted to the coffee data or taken from a cited coffee study. Values shown are before any numerical lower bound.
+\end{columns}
+\vfill\takeaway{Strong blockage is substantially imposed by this closure; it is not independent evidence of the mechanism.}
+\end{frame}
+
 \begin{frame}{Continuum balance over an infinitesimal slice}
 \begin{columns}[c,onlytextwidth]
 \column{.48\textwidth}\centering
@@ -267,9 +358,9 @@ Release and capture exchange fines locally between water and skeleton.
 \begin{align*}
 \frac{\partial(\varepsilon c)}{\partial t}+\frac{\partial(qc)}{\partial z}
  &=\frac{\partial}{\partial z}\left(\varepsilon D\frac{\partial c}{\partial z}\right)
- +R_{\mathrm{rel}}-R_{\mathrm{dep}}+R_{\mathrm{wash}},\\
+ +R_{\mathrm{rel}}-R_{\mathrm{dep}}+R_{\mathrm{rem}},\\
 \frac{\partial m_a}{\partial t}&=-R_{\mathrm{rel}},\qquad
-\frac{\partial m_d}{\partial t}=R_{\mathrm{dep}}-R_{\mathrm{wash}}.
+\frac{\partial m_d}{\partial t}=R_{\mathrm{dep}}-R_{\mathrm{rem}}.
 \end{align*}
 \hi{Equivalent surface description}
 \[
@@ -307,24 +398,57 @@ R_{\mathrm{dep}}=k_{\mathrm{dep}}\chi(z)|q|c
 
 \begin{frame}{Deposit remobilization and local pore accessibility}
 \small
-
+\hi{Deposits return to the water only above a forcing threshold}
 \[
 R_{\mathrm{det}}^*=k_{\mathrm{det}}m_d
-\left[\frac{G}{G_{\mathrm{crit}}}-1\right]_+^b,
-\qquad G=\left|\frac{\partial p}{\partial z}\right|.
+\left[\frac{G}{G_{\mathrm{crit}}}-1\right]_+^b,\qquad
+G=\left|\frac{\partial p}{\partial z}\right|.
 \]
+At $G\leq G_{\mathrm{crit}}$, remobilization is zero. Above the threshold,
+more deposits and stronger forcing increase the potential detachment rate.
 \[
-R_{\mathrm{wash}}=P_{\mathrm{esc}}R_{\mathrm{det}}^*,\qquad
-P_{\mathrm{esc}}=\frac{1}{1+\exp[s(d_f/d_h-\lambda_c)]}.
+R_{\mathrm{rem}}=P_{\mathrm{mob}}R_{\mathrm{det}}^*,\qquad
+P_{\mathrm{mob}}=\frac{1}{1+\exp[s(d_f/d_h-\lambda_c)]}.
 \]
 \begin{itemize}
-\item $P_{\mathrm{esc}}$ is an effective fraction entering the mobile phase locally.
-\item Unsuccessful mobilization remains in $m_d$ in this coarse description.
-\item A mobile particle can be captured again before reaching the outlet.
-\item The logistic law is unvalidated. Compare with $P_{\mathrm{esc}}=1$.
+\item $P_{\mathrm{mob}}$: fraction that can enter flowing pores locally.
+\item Larger fines $d_f$ relative to pore diameter $d_h$ reduce this fraction.
+\item $\lambda_c$: size ratio at 50\% access. $s$: transition steepness.
+\item The remaining fraction stays deposited. Mobile fines may deposit again.
 \end{itemize}
-\takeaway{Local remobilization does not imply arrival in the cup.}
+\slidesource{Notation: $R_{\mathrm{rem}}=R_{\mathrm{wash}}$ and $P_{\mathrm{mob}}=P_{\mathrm{esc}}$ in the code. The logistic law is an unvalidated closure.}
+\end{frame}
 
+\begin{frame}{Fines leaving the puck: sieve retention and cup collection}
+\small
+\hi{The outlet carries mobile fines out of the puck}
+\[
+\dot M_{\mathrm{out}}(t)=Q(t)c(L,t)\qquad [\mathrm{kg/s}].
+\]
+$c(L,t)$ is the fines concentration at the puck outlet.
+The outlet model neglects dispersive exchange with the basket.
+\par\medskip
+\begin{columns}[T,onlytextwidth]
+\column{.48\textwidth}\hi{Retained by the sieve}
+\[
+\dot M_{\mathrm{sieve}}=\eta_s\dot M_{\mathrm{out}}
+\]
+The basket retains the fraction $\eta_s$ of the outgoing fines.
+\column{.48\textwidth}\hi{Collected in the cup}
+\[
+\dot M_{\mathrm{cup}}=(1-\eta_s)\dot M_{\mathrm{out}}
+\]
+The remaining fraction passes through the basket into the cup.
+\end{columns}
+\[
+M_j(t)=\int_0^t\dot M_j(\tau)\,\mathrm d\tau,\quad
+j\in\{\mathrm{out},\mathrm{sieve},\mathrm{cup}\},\qquad
+M_{\mathrm{out}}=M_{\mathrm{sieve}}+M_{\mathrm{cup}}.
+\]
+\small Zero initial collected masses. The illustrative runs use constant
+$\eta_s=0.35$, so 65\% reaches the cup.
+\slidesource{Retention $\eta_s$ requires calibration. It differs from hydraulic resistance $R_s$.
+In the current model, sieve loading does not change $R_s$.}
 \end{frame}
 
 \begin{frame}{The PSD is reduced to quantities used by the 1D closures}
@@ -346,93 +470,47 @@ P_{\mathrm{esc}}=\frac{1}{1+\exp[s(d_f/d_h-\lambda_c)]}.
     \node[tumblue,font=\small\bfseries] at (3.9,3.15) {coarse mode};
    \end{tikzpicture}}
  \end{columns}
- \begin{center}\small
-  $f_{\mathrm{fine}}$ + releasable share $\rightarrow m_{\mathrm a,0}$, \quad
-  $d_f\rightarrow d_f/d_h$, \quad
-  $d_{\mathrm{eff}}\rightarrow d_{h,0}$ and structural baseline.
- \end{center}
+ \medskip\small
+ \textbf{Use in the model:} the fine mass fraction and its releasable share set the
+ initial attached inventory $m_{a,0}$. The fine diameter $d_f$ controls local
+ pore access. A representative bed diameter helps estimate the initial pore size.
  \slidesource{Source: Bora and Briesen, Journal of Food Process Engineering 49 (2026), e70645.}
 \end{frame}
 
-\begin{frame}{Two alternative closures for the same permeability}
+\begin{frame}{Constant pressure or PI control}
 \small
-Both closures supply $K$ to Darcy's law. They describe how deposits change resistance.
-\[\varepsilon=\max\left(\varepsilon_0-m_d/\rho_d,\varepsilon_{\min}\right)\]
-\begin{columns}[T,onlytextwidth]
-\column{.49\textwidth}\hi{Kozeny--Carman: structural baseline}
-\[\frac{K}{K_0}=\left(\frac{\varepsilon}{\varepsilon_0}\right)^3
-\left(\frac{1-\varepsilon_0}{1-\varepsilon}\right)^2\]
-Relates permeability to porosity under fixed effective particle scale and Kozeny factor.
-\par\medskip This simplified relation may miss changes in pore connectivity and localized plugging.
-\column{.47\textwidth}\hi{Exponential: empirical comparison}
-\[\frac{K}{K_0}=\exp\left(-\beta\frac{m_d}{m_{\mathrm{cap}}}\right)\]
-Assumes a direct sensitivity to deposit loading. $\beta$ controls the imposed blockage strength.
-\par\medskip Its form and coefficient were not derived from coffee measurements in this study.
-\end{columns}
-\vfill\takeaway{The runs test closure sensitivity at identical $K_0$. They do not validate either law.}
+\hi{Constant pressure: controlled reference}
+\[
+\Delta p_{\mathrm{total}}=9\ \mathrm{bar},\qquad
+Q=\Delta p_{\mathrm{total}}/R_{\mathrm{tot}}(t).
+\]
+The source supplies whatever flow maintains 9 bar. This represents an
+experimental 9 bar plateau only when the machine can sustain that pressure.
+\par\medskip
+\hi{Flow-limited PI: machine--puck prediction}
+\[
+e=p_{\mathrm{set}}-\Delta p_{\mathrm{total}},\qquad Q_{\mathrm{command}}\leq Q_{\max}.
+\]
+The controller adjusts pump flow, with feedforward and pump lag.
+A permeable puck may stay below the target because the pump reaches its flow limit.
+\par\medskip
+\takeaway{PI represents machine constraints. Its predictive value requires representative pump limits and controller settings.}
 \end{frame}
 
-\begin{frame}{Why the illustrative model used an exponential law}
+\begin{frame}{Pressure reference and experimental comparison}
 \small
-\hi{Motivation: represent strong blockage with a simple adjustable law}
-\par\medskip
-The hypothesis was that fines obstruct narrow flow paths, allowing a large resistance increase with a modest change in total porosity.
-\par\medskip
-The exponential form stays positive and decreases smoothly. These useful mathematical properties do not establish physical validity.
-\medskip
-\begin{columns}[c,onlytextwidth]
-\column{.45\textwidth}
-\begin{tabular}{cc}\toprule
-$m_d/m_{\mathrm{cap}}$ & $K/K_0$ at $\beta=5.5$\\\midrule
-0 & 1\\[.35em]
-0.5 & 0.064\\[.35em]
-1 & 0.0041\\\bottomrule
-\end{tabular}
-\column{.51\textwidth}
-\hi{An illustrative assumption}
-\par\medskip
-Neither the exponential law nor $\beta=5.5$ was fitted to the coffee data or taken from a cited coffee study. Values shown are before any numerical lower bound.
-\end{columns}
-\vfill\takeaway{Strong blockage is substantially imposed by this closure; it is not independent evidence of the mechanism.}
-\end{frame}
-
-\begin{frame}{Darcy flow and the permeability closure have different roles}
-\small
-
-\hi{Flow law: pressure gradient for a given superficial velocity}
-\[
--\frac{\partial p}{\partial z}=\frac{\mu q}{K(z,t)}.
-\]
-\hi{Structural closure: exponential, Kozeny--Carman or a PNM table}
-\[
-K(z,t)=K_0(z)\,f\!\left(m_d(z,t),\varepsilon(z,t)\right).
-\]
-\hi{Total hydraulic resistance}
-\[
-\Delta p_{\mathrm{puck}}=q\int_0^L\frac{\mu}{K(z,t)}\,\mathrm dz.
-\]
-\takeaway{Darcy and Kozeny--Carman are complementary. Forchheimer adds an optional inertial term to Darcy.}
-
-\end{frame}
-
-\begin{frame}{Operating conditions and basket resistance}
-\small
-
-\[
-\Delta p_{\mathrm{total}}=\Delta p_{\mathrm{puck}}+Q R_s,\qquad
-\dot M_{\mathrm{cup}}=(1-\eta_s)Aq\,c(L,t).
-\]
+\hi{Our priority: validate flow and cup fines using measured pressure}
 \begin{itemize}
-\item $R_s$ describes basket pressure loss. $\eta_s$ describes fines retention.
-\item Prescribed pressure or flow is sufficient for controlled boundary conditions.
-\item PI mode reproduces a machine response only after characterizing that machine.
+\item Prescribe the actual pressure drop to test the puck model without fitting uncertain machine-control parameters.
+\item Constant 9 bar is the reference for a sustained 9 bar interval. Use the actual pressure for experiments below the target.
+\item Retain flow-limited PI to predict pressure and flow for different initial PSDs, with a representative machine model.
 \end{itemize}
-\[
- e=p_{\mathrm{set}}-p,\quad
- Q_{\mathrm{cmd}}=\operatorname{clip}\left(Q_{\mathrm{ff}}+K_Pe+K_I\int e\,dt,0,Q_{\max}\right).
-\]
-\small PI has no derivative term. Identify $K_P$, $K_I$, pump lag and flow cap independently.
-
+\medskip
+$p_{\mathrm{out}}=0$, $p_{\mathrm{puck\ exit}}=Q R_s$.
+The measured pressure must refer to the same endpoints as the model.
+\par\medskip
+\takeaway{Measured pressure for validation. PI for machine--puck prediction. Constant 9 bar for comparison.}
+\slidesource{Measured time-series input remains an extension. The current saturated-puck model excludes initial wetting.}
 \end{frame}
 
 \begin{frame}{Boundary conditions for clean feed and an open outlet}
@@ -533,7 +611,7 @@ Starting at the basket, accumulate each cell's pressure loss upstream.
 \frac{(\varepsilon c)_i^{n+1}-(\varepsilon c)_i^n}{\Delta t}
 =
 -\frac{F_{i+1/2}-F_{i-1/2}}{\Delta z}
-+R_{\mathrm{rel},i}-R_{\mathrm{dep},i}+R_{\mathrm{wash},i}.
++R_{\mathrm{rel},i}-R_{\mathrm{dep},i}+R_{\mathrm{rem},i}.
 \]
 
 \[
@@ -632,7 +710,7 @@ Timestep refinement still checks accuracy of kinetics and coupling. The transpor
 \end{itemize}
 \end{columns}
 \vfill
-\small Current unit tests: 15/15 passed. All three comparison runs conserve fines mass to relative error below $1.4\times10^{-15}$. Physical validation remains outstanding.
+\small Current unit tests: 17/17 passed. The four pressure-mode runs conserve fines mass to relative error below $2.1\times10^{-15}$. Physical validation remains outstanding.
 
 \end{frame}
 
@@ -667,48 +745,78 @@ Across the entire simulation, the largest pressure difference was only \textbf{0
 \end{frame}
 
 \begin{frame}{The illustrative case develops strong viscous blockage}
+{\small\color{tumblue}Constant 9 bar across puck + basket. Exponential permeability.}\par\medskip
  \begin{columns}[T,onlytextwidth]
-  \column{.66\textwidth}{\centering\safeimage{hydraulic_response.png}{\linewidth}{4.3cm}}
+  \column{.66\textwidth}{\centering\safeimage{hydraulic_response.png}{\linewidth}{3.85cm}}
   \column{.30\textwidth}{\small
    \hi{At 60 s}
-   \begin{itemize}\item total pressure: 8.99 bar;
-   \item flow: 0.045 mL/s;
-   \item minimum $K/K_0$: 0.0126.\end{itemize}
+   \begin{itemize}\item total pressure: 9.00 bar;
+   \item flow: 0.0447 mL/s;
+   \item minimum $K/K_0$: 0.0125.\end{itemize}
    \vspace{.25cm}
    \hi{Interpretation}
 
-   The PI controller approaches 9 bar while the increasing puck resistance strongly reduces flow.}
+   At fixed 9 bar, deposition increases resistance and reduces flow. No PI controller is needed.}
  \end{columns}
- \slidesource{New Darcy run: exponential permeability, PI control. Illustrative parameters, no experimental calibration.}
+ \slidesource{New Darcy baseline: exponential permeability, constant 9 bar. Illustrative parameters, no experimental calibration.}
 \end{frame}
 
 \begin{frame}{The model distinguishes puck washout from fines in the cup}
+{\small\color{tumblue}Constant 9 bar across puck + basket. Exponential permeability.}\par\medskip
  \begin{columns}[T,onlytextwidth]
-  \column{.61\textwidth}{\centering\safeimage{fines_washout.png}{\linewidth}{4.3cm}}
+  \column{.61\textwidth}{\centering\safeimage{fines_washout.png}{\linewidth}{3.85cm}}
   \column{.35\textwidth}{\small
    \hi{Cumulative masses}
-   \begin{itemize}\item puck outlet: 0.0614 g;
-   \item basket retained: 0.0215 g;
-   \item cup: 0.0399 g.\end{itemize}
+   \begin{itemize}\item puck outlet: 0.0619 g;
+   \item basket retained: 0.0217 g;
+   \item cup: 0.0402 g.\end{itemize}
    \vspace{.25cm}
    With $\eta_s=0.35$, the basket retains 35\% of the fines that leave the puck.}
  \end{columns}
- \slidesource{New Darcy run with exponential permeability; constant basket retention.}
+ \slidesource{Constant 9 bar Darcy baseline with exponential permeability; constant basket retention.}
 \end{frame}
 
 \begin{frame}{The axial fields locate the effective blocking region}
+{\small\color{tumblue}Constant 9 bar across puck + basket. Exponential permeability.}\par\medskip
  \begin{columns}[T,onlytextwidth]
-  \column{.49\textwidth}{\centering\safeimage{deposited_fines.png}{\linewidth}{4.3cm}}
-  \column{.49\textwidth}{\centering\safeimage{relative_permeability.png}{\linewidth}{4.3cm}}
+  \column{.49\textwidth}{\centering\safeimage{deposited_fines.png}{\linewidth}{3.85cm}}
+  \column{.49\textwidth}{\centering\safeimage{relative_permeability.png}{\linewidth}{3.85cm}}
  \end{columns}
  \vspace{.1cm}
  \takeaway{These fields can be compared with interrupted CT reconstructions, but a 1D layer cannot represent lateral channel geometry.}
- \slidesource{New Darcy run with exponential permeability. Closure comparison follows.}
+ \slidesource{Constant 9 bar Darcy baseline with exponential permeability. The later closure comparison retains its original PI settings.}
+\end{frame}
+
+\begin{frame}{Fine puck: constant pressure versus PI}
+{\small\color{tumblue}Constant 9 bar vs.\ PI, 9 bar target. Exponential permeability.}\par\medskip
+\centering\includegraphics[width=.94\linewidth,height=3.5cm,keepaspectratio]{fine_puck_hydraulics.pdf}
+\par\small At 60 s: constant pressure gives $Q=0.0447$ mL/s; PI gives $Q=0.0454$ mL/s. The PI startup ramp changes the earlier fines history.
+\slidesource{Matched 60 s runs. Only control mode changes. Darcy + exponential, illustrative parameters.}
+\end{frame}
+
+\begin{frame}{Coarse puck: the pump cap limits initial pressure}
+{\small\color{tumblue}Constant 9 bar vs.\ PI, 9 bar target. Exponential permeability.}\par\medskip
+\centering\includegraphics[width=.94\linewidth,height=3.5cm,keepaspectratio]{coarse_puck_hydraulics.pdf}
+\par\small Constant 9 bar initially requires 105 mL/s, above the PI cap of 10.83 mL/s. PI reaches only 1.66 bar at 2 s. Deposition later raises resistance enough to reach the target.
+\slidesource{Matched 20 s runs with active fines. This coarse case does not stay below 9 bar throughout. No experimental calibration.}
+\end{frame}
+
+\begin{frame}{Pressure history also changes fines reaching the cup}
+{\small\color{tumblue}Constant 9 bar vs.\ PI, 9 bar target. Exponential permeability.}\par\medskip
+\begin{columns}[T,onlytextwidth]
+\column{.65\textwidth}\includegraphics[width=\linewidth,height=3.6cm,keepaspectratio]{coarse_puck_fines.pdf}
+\column{.32\textwidth}\small
+\hi{Same coarse puck and kinetics}
+\par\medskip Different pressure histories change flow, release and deposition.
+\par\medskip A fixed 9 bar run cannot directly represent a lower-pressure experiment.
+\end{columns}
+\slidesource{Only control mode differs. Basket retention and permeability closure are identical.}
 \end{frame}
 
 \begin{frame}{Permeability closure strongly changes the flow response}
+{\small\color{tumblue}Flow-limited PI, 9 bar target. Exponential vs.\ Kozeny--Carman.}\par\medskip
 \begin{columns}[c,onlytextwidth]
-\column{.66\textwidth}\includegraphics[width=\linewidth,height=4.0cm,keepaspectratio]{comparison_flow.pdf}
+\column{.66\textwidth}\includegraphics[width=\linewidth,height=3.6cm,keepaspectratio]{comparison_flow.pdf}
 \column{.31\textwidth}\small\hi{At 60 s}
 \par\medskip Exponential:\\$Q=0.0454$ mL/s
 \par\medskip Kozeny--Carman:\\$Q=0.892$ mL/s
@@ -719,8 +827,9 @@ Across the entire simulation, the largest pressure difference was only \textbf{0
 \end{frame}
 
 \begin{frame}{Kozeny--Carman predicts weaker permeability loss}
+{\small\color{tumblue}Flow-limited PI, 9 bar target. Exponential vs.\ Kozeny--Carman.}\par\medskip
 \begin{columns}[c,onlytextwidth]
-\column{.66\textwidth}\includegraphics[width=\linewidth,height=4.0cm,keepaspectratio]{comparison_permeability.pdf}
+\column{.66\textwidth}\includegraphics[width=\linewidth,height=3.6cm,keepaspectratio]{comparison_permeability.pdf}
 \column{.31\textwidth}\small\hi{Minimum $K/K_0$}
 \par\medskip Exponential:\\$0.0126$
 \par\medskip Kozeny--Carman:\\$0.723$
@@ -731,8 +840,9 @@ Across the entire simulation, the largest pressure difference was only \textbf{0
 \end{frame}
 
 \begin{frame}{The permeability closure also changes cup fines}
+{\small\color{tumblue}Flow-limited PI, 9 bar target. Exponential vs.\ Kozeny--Carman.}\par\medskip
 \begin{columns}[c,onlytextwidth]
-\column{.66\textwidth}\includegraphics[width=\linewidth,height=4.0cm,keepaspectratio]{comparison_cup_fines.pdf}
+\column{.66\textwidth}\includegraphics[width=\linewidth,height=3.6cm,keepaspectratio]{comparison_cup_fines.pdf}
 \column{.31\textwidth}\small\hi{Cup fines at 60 s}
 \par\medskip Exponential:\\$0.0399$ g
 \par\medskip Kozeny--Carman:\\$0.3466$ g
@@ -780,7 +890,7 @@ Future pore networks & Connectivity-sensitive permeability and capture/accessibi
 \end{itemize}
 \medskip
 \hi{Model comparisons}
-\small One versus two retained populations; accessibility factor versus $P_{\mathrm{esc}}=1$; uniform capture versus axial weighting.
+\small One versus two retained populations; accessibility factor versus $P_{\mathrm{mob}}=1$; uniform capture versus axial weighting.
 \vfill
 \takeaway{These are proposed experiments and comparisons. Validate on withheld pucks or grind settings.}
 
