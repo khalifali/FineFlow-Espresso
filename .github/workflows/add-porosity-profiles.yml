@@ -12,14 +12,21 @@ permissions:
 
 jobs:
   update:
-    runs-on: self-hosted
-    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       MPLBACKEND: Agg
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Install LaTeX tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-recommended texlive-pictures \
+            texlive-fonts-recommended lmodern poppler-utils
 
       - name: Prepare Python environment
         run: |
