@@ -47,6 +47,21 @@ jobs:
           .venv/bin/python fineflow_espresso_solver/fineflow_espresso/compare_pressure_modes.py
           .venv/bin/python fineflow_espresso_solver/fineflow_espresso/compare_closures.py
 
+      - name: Fix TeX replacement helper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tools/finalize_epsilon055.py')
+          text = path.read_text(encoding='utf-8')
+          if 'def sub(pattern, replacement, string, count=0):' not in text:
+              text = text.replace(
+                  'def sync_after_runs():\n',
+                  'def sync_after_runs():\n    def sub(pattern, replacement, string, count=0):\n        return re.sub(pattern, lambda _match: replacement, string, count=count)\n'
+              )
+              text = text.replace('tex=re.sub(', 'tex=sub(')
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Synchronize results with slides
         run: .venv/bin/python tools/finalize_epsilon055.py sync
 
@@ -56,7 +71,7 @@ jobs:
           pdflatex -interaction=nonstopmode -halt-on-error fineflow_espresso_sectioned.tex
           pdflatex -interaction=nonstopmode -halt-on-error fineflow_espresso_sectioned.tex
           ../.venv/bin/python build_transcript.py
-          pdftoppm -f 36 -singlefile -png -r 180 fineflow_espresso_sectioned.pdf ../porosity_slide36.png
+          pdftoppm -f 36 -singlefile -png -r 180 fineflow_espresso_sectioned.pdf porosity_slide36
 
       - name: Commit final synchronized state
         run: |
