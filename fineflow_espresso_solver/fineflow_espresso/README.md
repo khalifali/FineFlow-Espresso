@@ -50,6 +50,19 @@ exported from pore-network calculations. Optional axial arrays
 `initial_porosity_profile` and `initial_permeability_profile_m2` accept one
 value per finite-volume cell, allowing depth-resolved CT/PNM inputs.
 
+For a uniform initial porosity, `initial_porosity_mode` has two choices:
+
+- `given`: use `porosity_initial` directly. The active `fine_puck` case currently
+  uses `porosity_initial = 0.55` as an experimentally supplied starting value.
+- `mass_height_density`: calculate
+  `epsilon0 = 1 - coffee_mass_kg/(particle_density_kg_m3*A*length_m)`.
+
+`length_m` is the puck height in this relation. `initial_porosity_profile` remains
+a separate measured spatial override and is allowed only with `given` mode.
+The PSD fine mass fraction is not changed by the porosity choice; the current
+solver still receives its initial available-fines inventory separately in
+`available_fines_initial_kg_m3`.
+
 `hydraulic_model` selects `darcy` (default) or `darcy_forchheimer`. The latter is optional. It preserves CT/PNM-derived permeability in the viscous term while
 adding an independently calibratable nonlinear inertial term. This retains more
 structural information than calculating the entire resistance from the Ergun

@@ -149,6 +149,28 @@ rates and fit Delta-p = c1*Q + c2*Q^2. If the quadratic term is not statisticall
 resolvable, use Darcy or fix beta_F from PNM/Ergun and calibrate only K.
 
 
+4B. INITIAL POROSITY
+--------------------
+
+The initial porosity may be specified in two scalar ways:
+
+    initial_porosity_mode = "given"
+        Use porosity_initial directly. The active fine_puck starts from 0.55.
+
+    initial_porosity_mode = "mass_height_density"
+        Compute epsilon0 = 1 - m_coffee/(rho_particle*A*H), using
+        coffee_mass_kg, particle_density_kg_m3, puck area A, and H=length_m.
+
+A non-empty initial_porosity_profile remains a measured axial override for
+"given" mode. Do not combine a profile with mass_height_density mode.
+
+Porosity does not alter the PSD mass fraction itself. In the current solver,
+available_fines_initial_kg_m3 is still an independent input. If a measured dose
+and PSD fine mass fraction are used later to initialize fines, the physically
+consistent bulk-volume inventory is m_fines/(A*H); changing epsilon0 alone does
+not change that mass fraction when dose and geometry are fixed.
+
+
 5. FINES RELEASE, DEPOSITION, AND BLOCKAGE
 ------------------------------------------
 

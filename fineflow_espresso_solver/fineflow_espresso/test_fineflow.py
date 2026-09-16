@@ -276,6 +276,40 @@ class FineFlowTests(unittest.TestCase):
         self.assertLess(result.flow_rate_m3_s[-1], result.flow_rate_m3_s[0])
         self.assert_mass_conserved(result)
 
+    def test_initial_porosity_given_or_mass_height_density(self):
+        quiet = dict(
+            duration_s=0.25,
+            output_interval_s=0.25,
+            available_fines_initial_kg_m3=0.0,
+            deposited_fines_initial_kg_m3=0.0,
+            mobile_concentration_initial_kg_m3_liquid=0.0,
+            release_rate_s=0.0,
+            deposition_coefficient_m_inv=0.0,
+            detachment_rate_s=0.0,
+        )
+        given = simulate(
+            self.short_case(
+                initial_porosity_mode="given",
+                porosity_initial=0.55,
+                **quiet,
+            )
+        )
+        np.testing.assert_allclose(given.porosity[0], 0.55, rtol=0, atol=1e-14)
+
+        rho_p = 1200.0
+        target = 0.55
+        base = self.short_case(**quiet)
+        coffee_mass = (1.0 - target) * rho_p * base.area_m2 * base.length_m
+        computed = simulate(
+            replace(
+                base,
+                initial_porosity_mode="mass_height_density",
+                coffee_mass_kg=coffee_mass,
+                particle_density_kg_m3=rho_p,
+            )
+        )
+        np.testing.assert_allclose(computed.porosity[0], target, rtol=0, atol=1e-14)
+
     def test_named_case_config_and_prefixed_outputs(self):
         config = Path(__file__).with_name("case_config.json")
         case_name, parameters = _parameters_from_json(config)

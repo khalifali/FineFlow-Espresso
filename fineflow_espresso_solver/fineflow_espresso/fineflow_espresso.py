@@ -31,6 +31,7 @@ import pandas as pd
 
 
 ControlMode = Literal["constant", "pi", "pressure", "flow"]
+InitialPorosityMode = Literal["given", "mass_height_density"]
 PermeabilityModel = Literal["exponential", "kozeny_carman", "pnm_table"]
 HydraulicModel = Literal["darcy", "darcy_forchheimer"]
 WashoutEscapeModel = Literal["unity", "logistic", "pnm_table"]
@@ -48,7 +49,10 @@ class ModelParameters:
     n_cells: int = 40
 
     # Initial porous medium
+    initial_porosity_mode: InitialPorosityMode = "given"
     porosity_initial: float = 0.36
+    coffee_mass_kg: float | None = None
+    particle_density_kg_m3: float | None = None
     permeability_initial_m2: float = 1.0e-14
     initial_porosity_profile: tuple[float, ...] = ()
     initial_permeability_profile_m2: tuple[float, ...] = ()
@@ -133,6 +137,31 @@ class ModelParameters:
     def dz_m(self) -> float:
         return self.length_m / self.n_cells
 
+    @property
+    def puck_bulk_volume_m3(self) -> float:
+        return self.area_m2 * self.length_m
+
+    @property
+    def resolved_uniform_initial_porosity(self) -> float:
+        """Return the uniform initial porosity selected by the input mode."""
+
+        if self.initial_porosity_mode == "given":
+            return float(self.porosity_initial)
+        if self.initial_porosity_mode != "mass_height_density":
+            raise ValueError(
+                "initial_porosity_mode must be 'given' or 'mass_height_density'"
+            )
+        if self.coffee_mass_kg is None or self.particle_density_kg_m3 is None:
+            raise ValueError(
+                "mass_height_density porosity requires coffee_mass_kg and particle_density_kg_m3"
+            )
+        if self.coffee_mass_kg <= 0.0 or self.particle_density_kg_m3 <= 0.0:
+            raise ValueError(
+                "coffee_mass_kg and particle_density_kg_m3 must be positive"
+            )
+        solid_volume_m3 = self.coffee_mass_kg / self.particle_density_kg_m3
+        return float(1.0 - solid_volume_m3 / self.puck_bulk_volume_m3)
+
     def validate(self) -> None:
         positive = {
             "length_m": self.length_m,
@@ -162,6 +191,14 @@ class ModelParameters:
             raise ValueError(f"Parameters must be positive: {', '.join(bad)}")
         if self.control_mode not in ("constant", "pi", "pressure", "flow"):
             raise ValueError("control_mode must be 'constant', 'pi', 'pressure', or 'flow'")
+        if self.initial_porosity_mode not in ("given", "mass_height_density"):
+            raise ValueError(
+                "initial_porosity_mode must be 'given' or 'mass_height_density'"
+            )
+        if self.initial_porosity_mode == "mass_height_density" and self.initial_porosity_profile:
+            raise ValueError(
+                "initial_porosity_profile is a measured-profile override and cannot be combined with mass_height_density mode"
+            )
         if self.permeability_model not in (
             "exponential",
             "kozeny_carman",
@@ -244,15 +281,17 @@ class ModelParameters:
             raise ValueError("flow_rate_m3_s must be non-negative")
         if self.controller_initial_flow_m3_s > self.pump_flow_max_m3_s:
             raise ValueError("controller_initial_flow_m3_s cannot exceed pump_flow_max_m3_s")
-        if not 0 < self.minimum_porosity < self.porosity_initial < 1:
-            raise ValueError("Require 0 < minimum_porosity < porosity_initial < 1")
+        if self.initial_porosity_profile:
+            lowest_initial_porosity = min(self.initial_porosity_profile)
+        else:
+            resolved_initial_porosity = self.resolved_uniform_initial_porosity
+            if not 0 < self.minimum_porosity < resolved_initial_porosity < 1:
+                raise ValueError(
+                    "Resolved initial porosity must lie between minimum_porosity and 1"
+                )
+            lowest_initial_porosity = resolved_initial_porosity
         if not 0 < self.minimum_permeability_ratio <= 1:
             raise ValueError("minimum_permeability_ratio must be in (0, 1]")
-        lowest_initial_porosity = (
-            min(self.initial_porosity_profile)
-            if self.initial_porosity_profile
-            else self.porosity_initial
-        )
         maximum_safe_deposit = (
             lowest_initial_porosity - self.minimum_porosity
         ) * self.deposit_density_kg_m3
@@ -531,11 +570,11 @@ class SimulationResult:
 
 
 def _initial_porosity_profile(p: ModelParameters) -> np.ndarray:
-    """Uniform default or a CT-derived axial porosity profile."""
+    """Measured axial profile, given uniform value, or mass-derived value."""
 
     if p.initial_porosity_profile:
         return np.asarray(p.initial_porosity_profile, dtype=float)
-    return np.full(p.n_cells, p.porosity_initial, dtype=float)
+    return np.full(p.n_cells, p.resolved_uniform_initial_porosity, dtype=float)
 
 
 def _initial_permeability_profile(p: ModelParameters) -> np.ndarray:

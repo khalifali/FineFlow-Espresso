@@ -11,7 +11,11 @@
           "viscosity_pa_s",
           "fluid_density_kg_m3",
           "fine_particle_diameter_m",
-          "coarse_effective_diameter_m"
+          "coarse_effective_diameter_m",
+          "initial_porosity_mode",
+          "porosity_initial",
+          "coffee_mass_kg",
+          "particle_density_kg_m3"
         ],
         "ct_derived": [
           "initial_porosity_profile",
@@ -45,7 +49,7 @@
       "viscosity_pa_s": 0.001,
       "fluid_density_kg_m3": 998.0,
       "n_cells": 40,
-      "porosity_initial": 0.36,
+      "porosity_initial": 0.55,
       "permeability_initial_m2": 1e-14,
       "initial_porosity_profile": [],
       "initial_permeability_profile_m2": [],
@@ -93,7 +97,10 @@
       "output_interval_s": 0.25,
       "max_time_step_s": 0.1,
       "cfl_safety": 0.42,
-      "pressure_drop_pa": 900000
+      "pressure_drop_pa": 900000,
+      "initial_porosity_mode": "given",
+      "coffee_mass_kg": null,
+      "particle_density_kg_m3": null
     },
     "coarse_puck": {
       "_note": "Inactive while selected_case is 'fine_puck'. Coarse load-bearing particles with a smaller but nonzero fines population.",
