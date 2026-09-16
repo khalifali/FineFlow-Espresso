@@ -1,0 +1,145 @@
+\documentclass[a4paper,9pt]{article}
+\usepackage[margin=9mm]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{pdflscape}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{3.2pt}
+\renewcommand{\arraystretch}{1.08}
+\definecolor{tumblue}{RGB}{0,101,189}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\src}[1]{\textbf{#1}}
+\pagestyle{plain}
+
+\begin{document}
+\begin{landscape}
+
+{\Large\bfseries FineFlow--Espresso: parameter sources and calibration map}\hfill
+{\small Ali Khalifa}\par
+\vspace{1mm}
+\textcolor{tumblue}{\rule{\linewidth}{0.6pt}}
+\vspace{1mm}
+
+{\footnotesize
+\textbf{Purpose.} Compact reference for the numerical inputs in \texttt{ModelParameters}. The table separates directly measured inputs, CT-derived structure, hydraulic experiments, mass-in-cup measurements, CFD--DEM support, and numerical choices. The general porosity baseline is $\varepsilon_0=0.55$ when \texttt{initial\_porosity\_mode=given}. For \texttt{mass\_height\_density}, both \texttt{coffee\_mass\_kg} and \texttt{particle\_density\_kg\_m3} are mandatory and
+\[
+\varepsilon_0=1-\frac{m_{\rm coffee}}{\rho_p A H}.
+\]
+}
+
+\vspace{1mm}
+{\scriptsize
+\begin{tabularx}{\linewidth}{P{3.0cm} P{4.7cm} Y P{5.5cm}}
+\toprule
+\textbf{Physical quantity} & \textbf{Python syntax} & \textbf{Meaning / role} & \textbf{Source / fitting method} \\
+\midrule
+\multicolumn{4}{l}{\textcolor{tumblue}{\textbf{Geometry, fluid and initial structure}}}\\
+Puck height & \texttt{length\_m} & Bed height $H$; sets bulk volume and cell size. & \src{experiments--geometry} \\
+Puck diameter & \texttt{diameter\_m} & Sets cross-sectional area $A$. & \src{experiments--geometry} \\
+Water viscosity & \texttt{viscosity\_pa\_s} & Darcy viscous resistance and permeability conversion. & \src{experiments--fluid temperature / property data} \\
+Water density & \texttt{fluid\_density\_kg\_m3} & Used by optional Forchheimer inertia. & \src{experiments--fluid temperature / property data} \\
+Number of cells & \texttt{n\_cells} & 1D spatial resolution. & \src{numerical convergence} \\
+Uniform initial porosity & \texttt{porosity\_initial} & Uniform $\varepsilon_0$ in \texttt{given} mode; baseline 0.55. & \src{CT scan} \\
+Coffee mass / dose & \texttt{coffee\_mass\_kg} & Required for mass--height--density porosity. & \src{experiments--dose} \\
+Particle/envelope density & \texttt{particle\_density\_kg\_m3} & Converts coffee mass to solid volume. & \src{experiments--density / pycnometry} \\
+Axial initial porosity & \texttt{initial\_porosity\_profile} & Optional cellwise $\varepsilon_0(z)$ in \texttt{given} mode. & \src{CT scan} \\
+Initial permeability & \texttt{permeability\_initial\_m2} & Clean/initial permeability $K_0$. & \src{experiments--hydraulic}; \src{CFD--DEM case 01 support} \\
+Axial initial permeability & \texttt{initial\_permeability\_profile\_m2} & Optional $K_0(z)$ profile. & \src{CFD--DEM case 01}; global scaling from \src{experiments--hydraulic} \\
+Effective deposit density & \texttt{deposit\_density\_kg\_m3} & Converts deposited-fines loading into porosity loss. & \src{CFD--DEM cases 02/04} + \src{CT scan structural change} \\
+Minimum porosity & \texttt{minimum\_porosity} & Lower safety bound for $\varepsilon$. & \src{numerical / physical bound}; not fitted \\
+Minimum permeability ratio & \texttt{minimum\_permeability\_ratio} & Regularization floor for $K/K_0$. & \src{numerical convergence / robustness} \\
+\midrule
+\multicolumn{4}{l}{\textcolor{tumblue}{\textbf{Initial fines, release and transport}}}\\
+Initially available fines & \texttt{available\_fines\_initial\_kg\_m3} & Releasable fines per bulk puck volume. & \src{experiments--PSD + dose + mass in cup} \\
+Initially deposited fines & \texttt{deposited\_fines\_initial\_kg\_m3} & Deposit inventory at $t=0$; normally zero. & Initial condition; \src{CFD--DEM handoff} if preloaded \\
+Initial mobile concentration & \texttt{mobile\_concentration\_initial\_kg\_m3\_liquid} & Suspended fines in pore liquid at $t=0$. & Initial condition / \src{experiments--fluid sample} \\
+Deposit capacity & \texttt{deposit\_capacity\_kg\_m3} & Saturation scale suppressing further capture. & \src{CFD--DEM case 04} + loaded \src{experiments--hydraulic / mass balance} \\
+Release rate & \texttt{release\_rate\_s} & Base release timescale from the coffee matrix. & \src{experiments--mass in cup time history} \\
+Release-flow exponent & \texttt{release\_flow\_exponent} & Sensitivity of release to superficial velocity. & \src{experiments--mass in cup} at several hydraulic conditions \\
+Release reference velocity & \texttt{release\_reference\_velocity\_m\_s} & Reference $q$ used to nondimensionalize the release law. & Prescribed from characteristic \src{experiments--hydraulic} flow \\
+Axial dispersion coefficient & \texttt{axial\_dispersion\_m2\_s} & Spreads the mobile-fines front. & \src{CFD--DEM case 03}, supported by \src{case 04}; transport experiment if available \\
+Deposition coefficient & \texttt{deposition\_coefficient\_m\_inv} & Capture probability per travelled length. & \src{CFD--DEM case 03}, refined with \src{case 04 + experiments--mass in cup} \\
+Outlet capture multiplier & \texttt{outlet\_capture\_multiplier} & Extra phenomenological capture weighting near outlet. & \src{CT scan axial redistribution}; otherwise fix to 1 \\
+Outlet capture decay length & \texttt{outlet\_capture\_decay\_length\_m} & Spatial scale of outlet-weighted capture. & \src{CT scan axial redistribution}; otherwise not fitted \\
+\bottomrule
+\end{tabularx}
+}
+
+\newpage
+
+{\scriptsize
+\begin{tabularx}{\linewidth}{P{3.0cm} P{4.7cm} Y P{5.5cm}}
+\toprule
+\textbf{Physical quantity} & \textbf{Python syntax} & \textbf{Meaning / role} & \textbf{Source / fitting method} \\
+\midrule
+\multicolumn{4}{l}{\textcolor{tumblue}{\textbf{Detachment, blockage and permeability}}}\\
+Detachment rate & \texttt{detachment\_rate\_s} & Remobilization timescale above threshold. & \src{CFD--DEM case 05} + \src{experiments--mass in cup} under changed forcing \\
+Critical pressure gradient & \texttt{critical\_pressure\_gradient\_pa\_m} & $G_{\rm crit}$ for onset of remobilization. & \src{CFD--DEM case 05} + \src{experiments--hydraulic/mass in cup pressure-step tests} \\
+Detachment exponent & \texttt{detachment\_exponent} & Nonlinearity above $G_{\rm crit}$. & \src{CFD--DEM case 05} + pressure-step experiments \\
+Blocking factor & \texttt{permeability\_blocking\_factor} & $\beta$ in exponential $K/K_0$ closure. & \src{CFD--DEM cases 02/04} + loaded \src{experiments--hydraulic} \\
+Deposit grid for table & \texttt{pnm\_deposit\_kg\_m3} & Legacy name: deposit-loading coordinate for tabulated closure. & \src{CFD--DEM cases 02/04} + loaded \src{experiments--hydraulic} \\
+Relative-permeability table & \texttt{pnm\_permeability\_ratio} & Legacy name: $K/K_0$ versus deposit loading. & \src{CFD--DEM cases 02/04} + \src{experiments--hydraulic} \\
+Forchheimer coefficient & \texttt{forchheimer\_coefficient\_m\_inv} & Quadratic inertial coefficient $\beta_F$. & \src{experiments--hydraulic} at several $Q$; \src{CFD--DEM case 01 support} \\
+Axial Forchheimer profile & \texttt{initial\_forchheimer\_profile\_m\_inv} & Optional $\beta_{F,0}(z)$. & \src{CFD--DEM case 01}; global fit from \src{experiments--hydraulic} \\
+Forchheimer evolution exponent & \texttt{forchheimer\_permeability\_exponent} & Optional evolution of $\beta_F$ with $K$. & \src{CFD--DEM cases 02/04} or loaded \src{experiments--hydraulic}; default 0 \\
+\midrule
+\multicolumn{4}{l}{\textcolor{tumblue}{\textbf{PSD, pore accessibility and escape}}}\\
+Representative fine diameter & \texttt{fine\_particle\_diameter\_m} & Effective transported-fines size. & \src{experiments--PSD} \\
+Representative coarse diameter & \texttt{coarse\_effective\_diameter\_m} & Characteristic load-bearing particle size. & \src{experiments--PSD} \\
+Particle sphericity & \texttt{particle\_sphericity} & Shape correction in hydraulic-diameter estimate. & \src{experiments--imaging / microscopy} \\
+Initial hydraulic diameter & \texttt{initial\_hydraulic\_diameter\_profile\_m} & Optional $d_{h,0}(z)$ for geometrical accessibility. & \src{CT scan}; CFD--DEM geometry check \\
+Hydraulic-diameter ratio table & \texttt{pnm\_hydraulic\_diameter\_ratio} & Legacy name: $d_h/d_{h,0}$ versus deposition. & \src{CFD--DEM cases 02/04} + \src{CT scan structural change} \\
+Escape midpoint & \texttt{escape\_ratio\_midpoint} & $d_f/d_h$ at 50\% logistic escape probability. & \src{CFD--DEM case 05 / fully resolved particle-passage tests} \\
+Escape steepness & \texttt{escape\_ratio\_steepness} & Sharpness of logistic accessibility transition. & \src{CFD--DEM case 05 / fully resolved particle-passage tests} \\
+Tabulated size-ratio grid & \texttt{pnm\_size\_ratio} & Legacy name: $d_f/d_h$ coordinates for a table. & \src{CFD--DEM case 05 / particle-passage campaign} \\
+Tabulated escape probability & \texttt{pnm\_escape\_probability} & Legacy name: $P_{\rm escape}(d_f/d_h)$. & \src{CFD--DEM case 05 / particle-passage campaign} \\
+\midrule
+\multicolumn{4}{l}{\textcolor{tumblue}{\textbf{Basket, operating condition and machine model}}}\\
+Basket hydraulic resistance & \texttt{basket\_sieve\_resistance\_pa\_s\_m3} & Pressure loss outside the puck. & \src{experiments--hydraulic empty-basket test} \\
+Basket retention fraction & \texttt{basket\_fines\_retention\_fraction} & Fraction leaving puck but not reaching cup. & \src{experiments--mass in cup + separately measured basket-retained mass} \\
+Applied pressure & \texttt{pressure\_drop\_pa} & Operating pressure in constant/pressure mode. & \src{experiments--hydraulic}; prescribed measured condition \\
+Pressure-pulse start & \texttt{pressure\_pulse\_start\_s} & Start of legacy pressure pulse. & \src{experiments--operating protocol}; prescribed \\
+Pressure-pulse duration & \texttt{pressure\_pulse\_duration\_s} & Pulse duration. & \src{experiments--operating protocol}; prescribed \\
+Pulse pressure & \texttt{pressure\_pulse\_pa} & Pressure during legacy pulse. & \src{experiments--hydraulic protocol}; prescribed \\
+Imposed flow rate & \texttt{flow\_rate\_m3\_s} & Operating $Q$ in flow-control mode. & \src{experiments--hydraulic}; prescribed \\
+PI pressure setpoint & \texttt{pressure\_setpoint\_pa} & Machine target pressure. & \src{experiments--machine} \\
+Setpoint ramp & \texttt{pressure\_setpoint\_ramp\_s} & Startup pressure-target history. & \src{experiments--machine pressure trace} \\
+Pump maximum flow & \texttt{pump\_flow\_max\_m3\_s} & Maximum deliverable flow. & \src{experiments--machine pump curve} \\
+Pump time constant & \texttt{pump\_time\_constant\_s} & First-order actuator lag. & \src{experiments--machine transient response} \\
+PI proportional gain & \texttt{pi\_kp\_ml\_s\_per\_bar} & Controller $K_p$. & \src{experiments--machine/controller identification} \\
+PI integral gain & \texttt{pi\_ki\_ml\_s\_per\_bar\_s} & Controller $K_i$. & \src{experiments--machine/controller identification} \\
+Initial PI flow & \texttt{controller\_initial\_flow\_m3\_s} & Initial actuator state. & \src{experiments--machine initial condition} \\
+\midrule
+\multicolumn{4}{l}{\textcolor{tumblue}{\textbf{Purely numerical / output settings}}}\\
+Simulation duration & \texttt{duration\_s} & End time of the numerical run. & \src{experiments--protocol / prescribed} \\
+Output interval & \texttt{output\_interval\_s} & Saved-result sampling interval. & \src{numerical output choice} \\
+Maximum timestep & \texttt{max\_time\_step\_s} & Upper integration-step limit. & \src{numerical convergence} \\
+CFL safety factor & \texttt{cfl\_safety} & Explicit transport timestep safety factor. & \src{numerical convergence} \\
+\bottomrule
+\end{tabularx}
+}
+
+\vspace{2mm}
+{\footnotesize
+\textbf{CFD--DEM case map:}
+Case 01 = clean reference / $K_0$; Case 02 = held-fines blockage / $K/K_0(m_d)$; Case 03 = dilute capture / $k_{\rm dep}$ and $D_{\rm ax}$; Case 04 = progressive loading / capacity and blockage evolution; Case 05 = remobilization / $k_{\rm det}$, $G_{\rm crit}$, exponent and escape.
+
+\textbf{Categorical switches:}
+\texttt{initial\_porosity\_mode} = \texttt{given} or \texttt{mass\_height\_density};
+\texttt{permeability\_model} = \texttt{exponential}, \texttt{kozeny\_carman}, or tabulated legacy \texttt{pnm\_table};
+\texttt{hydraulic\_model} = \texttt{darcy} or \texttt{darcy\_forchheimer};
+\texttt{washout\_escape\_model} = \texttt{unity}, \texttt{logistic}, or tabulated legacy \texttt{pnm\_table};
+\texttt{control\_mode} = \texttt{constant}, \texttt{pi}, \texttt{pressure}, or \texttt{flow}.
+}
+
+\end{landscape}
+\end{document}
