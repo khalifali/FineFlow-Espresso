@@ -299,6 +299,8 @@ class FineFlowTests(unittest.TestCase):
             self.assertIn("named_test_fines_washout.png", names)
             self.assertIn("named_test_deposited_fines.png", names)
             self.assertIn("named_test_relative_permeability.png", names)
+            self.assertIn("named_test_porosity_profiles.png", names)
+            self.assertIn("named_test_porosity_profiles.pdf", names)
 
     def test_level_one_basket_splits_pressure_and_fines_mass(self):
         retention = 0.35

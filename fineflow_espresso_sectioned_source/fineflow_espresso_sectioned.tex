@@ -787,6 +787,26 @@ Across the entire simulation, the largest pressure difference was only \textbf{0
  \slidesource{Constant 9 bar Darcy baseline with exponential permeability. The later closure comparison retains its original PI settings.}
 \end{frame}
 
+
+\begin{frame}{Porosity profile evolves as fines redistribute}
+{\small\color{tumblue}Constant 9 bar across puck + basket. Exponential permeability. Illustrative, uncalibrated case.}\par\medskip
+\begin{columns}[T,onlytextwidth]
+ \column{.66\textwidth}\centering
+  \safeimage{porosity_profiles.pdf}{\linewidth}{4.05cm}
+ \column{.30\textwidth}\small
+  \hi{Predicted structure}
+  \begin{itemize}
+   \item Direct model observable: $\varepsilon(z,t)$.
+   \item Initial profile: $\varepsilon_0=0.36$.
+   \item Deposition lowers porosity, most strongly near the outlet/bottom.
+   \item At 60 s: $\varepsilon\approx0.338$--$0.355$.
+  \end{itemize}
+\end{columns}
+\vspace{.08cm}
+\takeaway{The predicted axial porosity evolution can be compared directly with interrupted CT profiles at matched extraction times.}
+\slidesource{Model $t=0$ is the start of extraction in the saturated 1D model; dry and preinfusion stages are not represented separately.}
+\end{frame}
+
 \begin{frame}{Fine puck: constant pressure versus PI}
 {\small\color{tumblue}Constant 9 bar vs.\ PI, 9 bar target. Exponential permeability.}\par\medskip
 \centering\includegraphics[width=.94\linewidth,height=3.5cm,keepaspectratio]{fine_puck_hydraulics.pdf}

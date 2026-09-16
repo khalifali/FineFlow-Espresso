@@ -1464,6 +1464,37 @@ def plot_publication_figures(
     _save_publication_figure(fig, output_dir / f"{prefix}_relative_permeability")
 
 
+    # Axial porosity profiles at representative extraction times. These are
+    # the same 1D observable that can be compared with interrupted CT profiles.
+    target_times_s = (0.0, min(10.0, time[-1]), min(30.0, time[-1]), time[-1])
+    profile_indices = []
+    for target_time in target_times_s:
+        index = int(np.argmin(np.abs(time - target_time)))
+        if index not in profile_indices:
+            profile_indices.append(index)
+
+    fig, ax = plt.subplots(figsize=(6.4, 4.2), constrained_layout=True)
+    colors = ("#9A9A9A", "#66B5D8", "#005293", "#6F4E37")
+    for color, index in zip(colors, profile_indices):
+        ax.plot(
+            z_mm,
+            result.porosity[index],
+            color=color,
+            lw=2.1,
+            label=f"{time[index]:g} s",
+        )
+    selected_porosity = result.porosity[profile_indices]
+    ymin = float(np.min(selected_porosity))
+    ymax = float(np.max(selected_porosity))
+    margin = max(0.0015, 0.08 * max(ymax - ymin, 1.0e-6))
+    ax.set_ylim(max(0.0, ymin - margin), min(1.0, ymax + margin))
+    ax.set_xlabel("Depth from inlet / top of puck [mm]")
+    ax.set_ylabel("Porosity [-]")
+    ax.grid(alpha=0.22)
+    ax.legend(title="Extraction time", loc="best", frameon=False)
+    _save_publication_figure(fig, output_dir / f"{prefix}_porosity_profiles")
+
+
 def _safe_case_name(case_name: str) -> str:
     """Return a predictable filename-safe version of a user case name."""
 
