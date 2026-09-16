@@ -1,0 +1,27 @@
+name: Preview porosity slide
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/preview-porosity-slide.yml
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render slide 36
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils
+          pdftoppm -f 36 -singlefile -png -r 160 \
+            fineflow_espresso_sectioned_source/fineflow_espresso_sectioned.pdf slide36
+      - uses: actions/upload-artifact@v4
+        with:
+          name: porosity-slide-preview
+          path: slide36.png
