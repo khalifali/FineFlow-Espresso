@@ -1,4 +1,4 @@
-name: Preview porosity slide
+name: Finalize porosity slide
 
 on:
   push:
@@ -7,21 +7,68 @@ on:
       - .github/workflows/preview-porosity-slide.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  preview:
+  finalize:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Render slide 36
+        with:
+          fetch-depth: 0
+
+      - name: Install rendering tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends poppler-utils
-          pdftoppm -f 36 -singlefile -png -r 160 \
-            fineflow_espresso_sectioned_source/fineflow_espresso_sectioned.pdf slide36
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-recommended texlive-pictures \
+            texlive-fonts-recommended lmodern poppler-utils
+          python3 -m pip install pymupdf
+
+      - name: Make t=0 interpretation visible
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('fineflow_espresso_sectioned_source/fineflow_espresso_sectioned.tex')
+          text = path.read_text(encoding='utf-8')
+          old = "  \\safeimage{porosity_profiles.pdf}{\\linewidth}{4.05cm}\n \\column{.30\\textwidth}\\small"
+          new = (
+              "  \\safeimage{porosity_profiles.pdf}{\\linewidth}{4.05cm}\n"
+              "  \\par\\vspace{-.12cm}{\\scriptsize\\color{tumgray}Model $t=0$: start of saturated extraction; dry/preinfusion not modeled.}\n"
+              " \\column{.30\\textwidth}\\small"
+          )
+          if old not in text:
+              raise SystemExit('Porosity-slide figure anchor not found')
+          text = text.replace(old, new, 1)
+          hidden_note = "\\slidesource{Model $t=0$ is the start of extraction in the saturated 1D model; dry and preinfusion stages are not represented separately.}\n"
+          text = text.replace(hidden_note, '', 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Recompile deck and transcript
+        run: |
+          cd fineflow_espresso_sectioned_source
+          pdflatex -interaction=nonstopmode -halt-on-error fineflow_espresso_sectioned.tex
+          pdflatex -interaction=nonstopmode -halt-on-error fineflow_espresso_sectioned.tex
+          python3 build_transcript.py
+          test "$(pdfinfo fineflow_espresso_sectioned.pdf | awk '/^Pages:/ {print $2}')" = "49"
+          pdftoppm -f 36 -singlefile -png -r 160 fineflow_espresso_sectioned.pdf ../slide36.png
+
+      - name: Commit final slide
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            fineflow_espresso_sectioned_source/fineflow_espresso_sectioned.tex \
+            fineflow_espresso_sectioned_source/fineflow_espresso_sectioned.pdf \
+            fineflow_espresso_sectioned_source/fineflow_espresso_sectioned_with_transcript.pdf
+          if ! git diff --cached --quiet; then
+            git commit -m "Clarify model time on porosity slide"
+            git push origin HEAD:main
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
-          name: porosity-slide-preview
+          name: porosity-slide-preview-final
           path: slide36.png
