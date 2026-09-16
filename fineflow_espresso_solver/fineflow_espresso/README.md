@@ -52,10 +52,11 @@ value per finite-volume cell, allowing depth-resolved CT/PNM inputs.
 
 For a uniform initial porosity, `initial_porosity_mode` has two choices:
 
-- `given`: use `porosity_initial` directly. The active `fine_puck` case currently
-  uses `porosity_initial = 0.55` as an experimentally supplied starting value.
+- `given`: use `porosity_initial` directly. The general solver baseline and the active
+  `fine_puck` case use `porosity_initial = 0.55` as the current CT-matched starting value.
 - `mass_height_density`: calculate
-  `epsilon0 = 1 - coffee_mass_kg/(particle_density_kg_m3*A*length_m)`.
+  `epsilon0 = 1 - coffee_mass_kg/(particle_density_kg_m3*A*length_m)`. In this mode
+  both `coffee_mass_kg` and `particle_density_kg_m3` are mandatory positive inputs.
 
 `length_m` is the puck height in this relation. `initial_porosity_profile` remains
 a separate measured spatial override and is allowed only with `given` mode.
@@ -254,3 +255,7 @@ a pressure ramp does not model initial wetting.
 See `pressure_comparison/README.md` and the updated sectioned deck for the
 matched comparison. The earlier PI closure comparison is retained and labeled
 separately so pressure-mode and permeability-law effects are not confounded.
+
+## Complete parameter calibration map
+
+See `PARAMETER_CALIBRATION_MATRIX.md` for every numerical `ModelParameters` input, its physical meaning, and the intended experimental or CFD-DEM source.

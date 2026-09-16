@@ -731,15 +731,15 @@ We ran the same case twice, changing only the flow law.
 \begin{tabular}{lcc}
 \toprule
 \textbf{Result at 60 s} & \textbf{Darcy--Forchheimer} & \textbf{Darcy}\\\midrule
-Pressure [bar] & 8.9906 & 8.9906\\[.8em]
-Flow rate [mL/s] & 0.04535 & 0.04535\\[.8em]
-Cup fines [g] & 0.03993 & 0.03993\\\bottomrule
+Pressure [bar] & 8.9905 & 8.9905\\[.8em]
+Flow rate [mL/s] & 0.05212 & 0.05212\\[.8em]
+Cup fines [g] & 0.03720 & 0.03720\\\bottomrule
 \end{tabular}
 \par\medskip
 {\footnotesize Values rounded for display.}
 \end{center}
 \medskip
-Across the entire simulation, the largest pressure difference was only \textbf{0.0203 Pa}.
+Across the entire simulation, the largest pressure difference was only \textbf{0.0186 Pa}.
 \vfill\takeaway{We therefore use Darcy for this tested case.}
 \slidesource{Controlled 60 s simulations with identical exponential permeability, kinetics and PI settings.}
 \end{frame}
@@ -751,8 +751,8 @@ Across the entire simulation, the largest pressure difference was only \textbf{0
   \column{.30\textwidth}{\small
    \hi{At 60 s}
    \begin{itemize}\item total pressure: 9.00 bar;
-   \item flow: 0.0447 mL/s;
-   \item minimum $K/K_0$: 0.0125.\end{itemize}
+   \item flow: 0.0514 mL/s;
+   \item minimum $K/K_0$: 0.0143.\end{itemize}
    \vspace{.25cm}
    \hi{Interpretation}
 
@@ -767,9 +767,9 @@ Across the entire simulation, the largest pressure difference was only \textbf{0
   \column{.61\textwidth}{\centering\safeimage{fines_washout.png}{\linewidth}{3.85cm}}
   \column{.35\textwidth}{\small
    \hi{Cumulative masses}
-   \begin{itemize}\item puck outlet: 0.0619 g;
-   \item basket retained: 0.0217 g;
-   \item cup: 0.0402 g.\end{itemize}
+   \begin{itemize}\item puck outlet: 0.0577 g;
+   \item basket retained: 0.0202 g;
+   \item cup: 0.0375 g.\end{itemize}
    \vspace{.25cm}
    With $\eta_s=0.35$, the basket retains 35\% of the fines that leave the puck.}
  \end{columns}
@@ -789,35 +789,35 @@ Across the entire simulation, the largest pressure difference was only \textbf{0
 
 
 \begin{frame}{Porosity profile evolves as fines redistribute}
-{\small\color{tumblue}Constant 9 bar across puck + basket. Exponential permeability. Illustrative, uncalibrated case.}\par\medskip
+{\small\color{tumblue}Dry baseline $\varepsilon_0=0.55$ chosen from the CT dry-state level. Constant 9 bar across puck + basket.}\par\medskip
 \begin{columns}[T,onlytextwidth]
  \column{.66\textwidth}\centering
   \safeimage{porosity_profiles.pdf}{\linewidth}{4.05cm}
-  \par\vspace{-.12cm}{\scriptsize\color{tumgray}Model $t=0$: start of saturated extraction; dry/preinfusion not modeled.}
  \column{.30\textwidth}\small
   \hi{Predicted structure}
   \begin{itemize}
    \item Direct model observable: $\varepsilon(z,t)$.
-   \item Initial profile: $\varepsilon_0=0.36$.
-   \item Deposition lowers porosity, most strongly near the outlet/bottom.
-   \item At 60 s: $\varepsilon\approx0.338$--$0.355$.
+   \item Dry baseline: $\varepsilon_0=0.55$.
+   \item Deposition lowers porosity, strongest near outlet/bottom.
+   \item At 60 s: $\varepsilon\approx0.529$--$0.544$.
   \end{itemize}
 \end{columns}
 \vspace{.08cm}
-\takeaway{The predicted axial porosity evolution can be compared directly with interrupted CT profiles at matched extraction times.}
+\takeaway{After matching the dry-state baseline, compare magnitude, axial trend and time evolution with interrupted CT profiles.}
+\slidesource{Illustrative 1D result; the GL22, GL25 and GL28 dry CT profiles have similar mean porosity but different local structure.}
 \end{frame}
 
 \begin{frame}{Fine puck: constant pressure versus PI}
 {\small\color{tumblue}Constant 9 bar vs.\ PI, 9 bar target. Exponential permeability.}\par\medskip
 \centering\includegraphics[width=.94\linewidth,height=3.5cm,keepaspectratio]{fine_puck_hydraulics.pdf}
-\par\small At 60 s: constant pressure gives $Q=0.0447$ mL/s; PI gives $Q=0.0454$ mL/s. The PI startup ramp changes the earlier fines history.
+\par\small At 60 s: constant pressure gives $Q=0.0514$ mL/s; PI gives $Q=0.0521$ mL/s. The PI startup ramp changes the earlier fines history.
 \slidesource{Matched 60 s runs. Only control mode changes. Darcy + exponential, illustrative parameters.}
 \end{frame}
 
 \begin{frame}{Coarse puck: the pump cap limits initial pressure}
 {\small\color{tumblue}Constant 9 bar vs.\ PI, 9 bar target. Exponential permeability.}\par\medskip
 \centering\includegraphics[width=.94\linewidth,height=3.5cm,keepaspectratio]{coarse_puck_hydraulics.pdf}
-\par\small Constant 9 bar initially requires 105 mL/s, above the PI cap of 10.83 mL/s. PI reaches only 1.66 bar at 2 s. Deposition later raises resistance enough to reach the target.
+\par\small Constant 9 bar initially requires 105.0 mL/s, above the PI cap of 10.83 mL/s. PI is initially flow-limited before resistance increases. Deposition later raises resistance enough to reach the target.
 \slidesource{Matched 20 s runs with active fines. This coarse case does not stay below 9 bar throughout. No experimental calibration.}
 \end{frame}
 

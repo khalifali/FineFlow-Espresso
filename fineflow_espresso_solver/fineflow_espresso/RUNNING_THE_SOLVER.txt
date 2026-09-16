@@ -155,11 +155,12 @@ resolvable, use Darcy or fix beta_F from PNM/Ergun and calibrate only K.
 The initial porosity may be specified in two scalar ways:
 
     initial_porosity_mode = "given"
-        Use porosity_initial directly. The active fine_puck starts from 0.55.
+        Use porosity_initial directly. The general baseline and active fine_puck start from 0.55.
 
     initial_porosity_mode = "mass_height_density"
-        Compute epsilon0 = 1 - m_coffee/(rho_particle*A*H), using
-        coffee_mass_kg, particle_density_kg_m3, puck area A, and H=length_m.
+        Compute epsilon0 = 1 - m_coffee/(rho_particle*A*H), using puck area A
+        and H=length_m. coffee_mass_kg and particle_density_kg_m3 are REQUIRED
+        positive inputs in this mode; the solver raises an error if either is missing.
 
 A non-empty initial_porosity_profile remains a measured axial override for
 "given" mode. Do not combine a profile with mass_height_density mode.

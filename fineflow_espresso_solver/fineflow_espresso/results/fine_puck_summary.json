@@ -19,14 +19,14 @@
   "controller_saturated_fraction": 0.0,
   "final_effective_permeability_m2": 4.3214983011663305e-16,
   "minimum_local_permeability_ratio": 0.014344149204907614,
-  "maximum_deposit_kg_m3": 13.890806642715186,
+  "maximum_deposit_kg_m3": 13.890806642715184,
   "maximum_pressure_gradient_MPa_m": 138.56224741217088,
   "final_minimum_hydraulic_diameter_um": 168.22103629139096,
   "final_maximum_fine_to_hydraulic_diameter_ratio": 0.14861399353583357,
   "final_mean_washout_escape_probability": 0.975734584541007,
   "final_blockage_position_mm_from_inlet": 19.75,
-  "cumulative_puck_outlet_fines_g": 0.057702540472886504,
+  "cumulative_puck_outlet_fines_g": 0.057702540472886484,
   "cumulative_basket_retained_fines_g": 0.020195889165510277,
-  "cumulative_cup_fines_g": 0.03750665130737622,
+  "cumulative_cup_fines_g": 0.03750665130737621,
   "maximum_relative_mass_balance_error": 1.0258985437695583e-15
 }

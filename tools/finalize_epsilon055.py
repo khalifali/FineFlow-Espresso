@@ -141,6 +141,8 @@ def write_matrix():
 
 
 def sync_after_runs():
+    def sub(pattern, replacement, string, count=0):
+        return re.sub(pattern, lambda _match: replacement, string, count=count)
     results = SDIR / 'results'
     figdir = DECK / 'figures'
     for srcname,dstname in [
@@ -165,15 +167,15 @@ def sync_after_runs():
     maxdp=metrics['darcy_vs_forchheimer']['pressure_drop_pa']['max_absolute_difference']
 
     texpath=DECK/'fineflow_espresso_sectioned.tex'; tex=texpath.read_text(encoding='utf-8')
-    tex=re.sub(r'Pressure \[bar\] & [0-9.]+ & [0-9.]+', f"Pressure [bar] & {fx['final_pressure_drop_bar']:.4f} & {dx['final_pressure_drop_bar']:.4f}", tex, count=1)
-    tex=re.sub(r'Flow rate \[mL/s\] & [0-9.]+ & [0-9.]+', f"Flow rate [mL/s] & {fx['final_flow_rate_ml_s']:.5f} & {dx['final_flow_rate_ml_s']:.5f}", tex, count=1)
-    tex=re.sub(r'Cup fines \[g\] & [0-9.]+ & [0-9.]+', f"Cup fines [g] & {fx['cumulative_cup_fines_g']:.5f} & {dx['cumulative_cup_fines_g']:.5f}", tex, count=1)
-    tex=re.sub(r'largest pressure difference was only \\textbf\{[^}]+ Pa\}', f'largest pressure difference was only \\textbf{{{maxdp:.4f} Pa}}', tex, count=1)
-    tex=re.sub(r'\\item flow: [0-9.]+ mL/s;', f"\\item flow: {base['final_flow_rate_ml_s']:.4f} mL/s;", tex, count=1)
-    tex=re.sub(r'\\item minimum \$K/K_0\$: [0-9.]+\.', f"\\item minimum $K/K_0$: {base['minimum_local_permeability_ratio']:.4f}.", tex, count=1)
-    tex=re.sub(r'\\item puck outlet: [0-9.]+ g;', f"\\item puck outlet: {base['cumulative_puck_outlet_fines_g']:.4f} g;", tex, count=1)
-    tex=re.sub(r'\\item basket retained: [0-9.]+ g;', f"\\item basket retained: {base['cumulative_basket_retained_fines_g']:.4f} g;", tex, count=1)
-    tex=re.sub(r'\\item cup: [0-9.]+ g\.', f"\\item cup: {base['cumulative_cup_fines_g']:.4f} g.", tex, count=1)
+    tex=sub(r'Pressure \[bar\] & [0-9.]+ & [0-9.]+', f"Pressure [bar] & {fx['final_pressure_drop_bar']:.4f} & {dx['final_pressure_drop_bar']:.4f}", tex, count=1)
+    tex=sub(r'Flow rate \[mL/s\] & [0-9.]+ & [0-9.]+', f"Flow rate [mL/s] & {fx['final_flow_rate_ml_s']:.5f} & {dx['final_flow_rate_ml_s']:.5f}", tex, count=1)
+    tex=sub(r'Cup fines \[g\] & [0-9.]+ & [0-9.]+', f"Cup fines [g] & {fx['cumulative_cup_fines_g']:.5f} & {dx['cumulative_cup_fines_g']:.5f}", tex, count=1)
+    tex=sub(r'largest pressure difference was only \\textbf\{[^}]+ Pa\}', f'largest pressure difference was only \\textbf{{{maxdp:.4f} Pa}}', tex, count=1)
+    tex=sub(r'\\item flow: [0-9.]+ mL/s;', f"\\item flow: {base['final_flow_rate_ml_s']:.4f} mL/s;", tex, count=1)
+    tex=sub(r'\\item minimum \$K/K_0\$: [0-9.]+\.', f"\\item minimum $K/K_0$: {base['minimum_local_permeability_ratio']:.4f}.", tex, count=1)
+    tex=sub(r'\\item puck outlet: [0-9.]+ g;', f"\\item puck outlet: {base['cumulative_puck_outlet_fines_g']:.4f} g;", tex, count=1)
+    tex=sub(r'\\item basket retained: [0-9.]+ g;', f"\\item basket retained: {base['cumulative_basket_retained_fines_g']:.4f} g;", tex, count=1)
+    tex=sub(r'\\item cup: [0-9.]+ g\.', f"\\item cup: {base['cumulative_cup_fines_g']:.4f} g.", tex, count=1)
 
     start=tex.index('\\begin{frame}{Porosity profile evolves as fines redistribute}')
     end=tex.index('\\begin{frame}{Fine puck: constant pressure versus PI}', start)
@@ -199,14 +201,14 @@ def sync_after_runs():
 '''
     tex=tex[:start]+slide+tex[end:]
     fc=pressure['fine_puck_constant']; fp=pressure['fine_puck_pi']; cc=pressure['coarse_puck_constant']
-    tex=re.sub(r'At 60 s: constant pressure gives \$Q=[0-9.]+\$ mL/s; PI gives \$Q=[0-9.]+\$ mL/s\.', f"At 60 s: constant pressure gives $Q={fc['final_flow_rate_ml_s']:.4f}$ mL/s; PI gives $Q={fp['final_flow_rate_ml_s']:.4f}$ mL/s.", tex, count=1)
-    tex=re.sub(r'Constant 9 bar initially requires [0-9.]+ mL/s, above the PI cap of 10\.83 mL/s\. PI reaches only [0-9.]+ bar at 2 s\.', f"Constant 9 bar initially requires {cc['initial_flow_rate_ml_s']:.1f} mL/s, above the PI cap of {cc['pump_flow_cap_ml_s']:.2f} mL/s. PI is initially flow-limited before resistance increases.", tex, count=1)
-    tex=re.sub(r'Exponential:\\\\$Q=[0-9.]+\$ mL/s', f"Exponential:\\\\$Q={dx['final_flow_rate_ml_s']:.3f}$ mL/s", tex, count=1)
-    tex=re.sub(r'Kozeny--Carman:\\\\$Q=[0-9.]+\$ mL/s', f"Kozeny--Carman:\\\\$Q={kx['final_flow_rate_ml_s']:.3f}$ mL/s", tex, count=1)
-    tex=re.sub(r'Exponential:\\\\$0\.[0-9]+\$', f"Exponential:\\\\${dx['minimum_local_permeability_ratio']:.4f}$", tex, count=1)
-    tex=re.sub(r'Kozeny--Carman:\\\\$0\.[0-9]+\$', f"Kozeny--Carman:\\\\${kx['minimum_local_permeability_ratio']:.3f}$", tex, count=1)
-    tex=re.sub(r'Exponential:\\\\$[0-9.]+\$ g', f"Exponential:\\\\${dx['cumulative_cup_fines_g']:.4f}$ g", tex, count=1)
-    tex=re.sub(r'Kozeny--Carman:\\\\$[0-9.]+\$ g', f"Kozeny--Carman:\\\\${kx['cumulative_cup_fines_g']:.4f}$ g", tex, count=1)
+    tex=sub(r'At 60 s: constant pressure gives \$Q=[0-9.]+\$ mL/s; PI gives \$Q=[0-9.]+\$ mL/s\.', f"At 60 s: constant pressure gives $Q={fc['final_flow_rate_ml_s']:.4f}$ mL/s; PI gives $Q={fp['final_flow_rate_ml_s']:.4f}$ mL/s.", tex, count=1)
+    tex=sub(r'Constant 9 bar initially requires [0-9.]+ mL/s, above the PI cap of 10\.83 mL/s\. PI reaches only [0-9.]+ bar at 2 s\.', f"Constant 9 bar initially requires {cc['initial_flow_rate_ml_s']:.1f} mL/s, above the PI cap of {cc['pump_flow_cap_ml_s']:.2f} mL/s. PI is initially flow-limited before resistance increases.", tex, count=1)
+    tex=sub(r'Exponential:\\\\$Q=[0-9.]+\$ mL/s', f"Exponential:\\\\$Q={dx['final_flow_rate_ml_s']:.3f}$ mL/s", tex, count=1)
+    tex=sub(r'Kozeny--Carman:\\\\$Q=[0-9.]+\$ mL/s', f"Kozeny--Carman:\\\\$Q={kx['final_flow_rate_ml_s']:.3f}$ mL/s", tex, count=1)
+    tex=sub(r'Exponential:\\\\$0\.[0-9]+\$', f"Exponential:\\\\${dx['minimum_local_permeability_ratio']:.4f}$", tex, count=1)
+    tex=sub(r'Kozeny--Carman:\\\\$0\.[0-9]+\$', f"Kozeny--Carman:\\\\${kx['minimum_local_permeability_ratio']:.3f}$", tex, count=1)
+    tex=sub(r'Exponential:\\\\$[0-9.]+\$ g', f"Exponential:\\\\${dx['cumulative_cup_fines_g']:.4f}$ g", tex, count=1)
+    tex=sub(r'Kozeny--Carman:\\\\$[0-9.]+\$ g', f"Kozeny--Carman:\\\\${kx['cumulative_cup_fines_g']:.4f}$ g", tex, count=1)
     texpath.write_text(tex, encoding='utf-8')
 
     trpath=DECK/'transcript.json'; tr=json.loads(trpath.read_text())

@@ -50,7 +50,7 @@ class ModelParameters:
 
     # Initial porous medium
     initial_porosity_mode: InitialPorosityMode = "given"
-    porosity_initial: float = 0.36
+    porosity_initial: float = 0.55
     coffee_mass_kg: float | None = None
     particle_density_kg_m3: float | None = None
     permeability_initial_m2: float = 1.0e-14
