@@ -1,0 +1,151 @@
+name: Update initial porosity options
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/update-initial-porosity.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch solver, config, tests, and docs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          root = Path('.')
+          solver = root / 'fineflow_espresso_solver/fineflow_espresso/fineflow_espresso.py'
+          text = solver.read_text(encoding='utf-8')
+
+          old = 'ControlMode = Literal["constant", "pi", "pressure", "flow"]\n'
+          new = old + 'InitialPorosityMode = Literal["given", "mass_height_density"]\n'
+          if 'InitialPorosityMode' not in text:
+              if old not in text:
+                  raise SystemExit('ControlMode anchor not found')
+              text = text.replace(old, new, 1)
+
+          old = '''    # Initial porous medium\n    porosity_initial: float = 0.36\n    permeability_initial_m2: float = 1.0e-14\n'''
+          new = '''    # Initial porous medium\n    initial_porosity_mode: InitialPorosityMode = "given"\n    porosity_initial: float = 0.36\n    coffee_mass_kg: float | None = None\n    particle_density_kg_m3: float | None = None\n    permeability_initial_m2: float = 1.0e-14\n'''
+          if 'coffee_mass_kg:' not in text:
+              if old not in text:
+                  raise SystemExit('Initial porous medium anchor not found')
+              text = text.replace(old, new, 1)
+
+          anchor = '''    @property\n    def dz_m(self) -> float:\n        return self.length_m / self.n_cells\n\n'''
+          addition = '''    @property\n    def puck_bulk_volume_m3(self) -> float:\n        return self.area_m2 * self.length_m\n\n    @property\n    def resolved_uniform_initial_porosity(self) -> float:\n        \"\"\"Return the uniform initial porosity selected by the input mode.\"\"\"\n\n        if self.initial_porosity_mode == \"given\":\n            return float(self.porosity_initial)\n        if self.initial_porosity_mode != \"mass_height_density\":\n            raise ValueError(\n                \"initial_porosity_mode must be 'given' or 'mass_height_density'\"\n            )\n        if self.coffee_mass_kg is None or self.particle_density_kg_m3 is None:\n            raise ValueError(\n                \"mass_height_density porosity requires coffee_mass_kg and particle_density_kg_m3\"\n            )\n        if self.coffee_mass_kg <= 0.0 or self.particle_density_kg_m3 <= 0.0:\n            raise ValueError(\n                \"coffee_mass_kg and particle_density_kg_m3 must be positive\"\n            )\n        solid_volume_m3 = self.coffee_mass_kg / self.particle_density_kg_m3\n        return float(1.0 - solid_volume_m3 / self.puck_bulk_volume_m3)\n\n'''
+          if 'def resolved_uniform_initial_porosity' not in text:
+              if anchor not in text:
+                  raise SystemExit('dz property anchor not found')
+              text = text.replace(anchor, anchor + addition, 1)
+
+          anchor = '''        if self.control_mode not in ("constant", "pi", "pressure", "flow"):\n            raise ValueError("control_mode must be 'constant', 'pi', 'pressure', or 'flow'")\n'''
+          addition = '''        if self.initial_porosity_mode not in ("given", "mass_height_density"):\n            raise ValueError(\n                "initial_porosity_mode must be 'given' or 'mass_height_density'"\n            )\n        if self.initial_porosity_mode == "mass_height_density" and self.initial_porosity_profile:\n            raise ValueError(\n                "initial_porosity_profile is a measured-profile override and cannot be combined with mass_height_density mode"\n            )\n'''
+          if 'cannot be combined with mass_height_density mode' not in text:
+              if anchor not in text:
+                  raise SystemExit('validation mode anchor not found')
+              text = text.replace(anchor, anchor + addition, 1)
+
+          old = '''        if not 0 < self.minimum_porosity < self.porosity_initial < 1:\n            raise ValueError("Require 0 < minimum_porosity < porosity_initial < 1")\n        if not 0 < self.minimum_permeability_ratio <= 1:\n            raise ValueError("minimum_permeability_ratio must be in (0, 1]")\n        lowest_initial_porosity = (\n            min(self.initial_porosity_profile)\n            if self.initial_porosity_profile\n            else self.porosity_initial\n        )\n'''
+          new = '''        if self.initial_porosity_profile:\n            lowest_initial_porosity = min(self.initial_porosity_profile)\n        else:\n            resolved_initial_porosity = self.resolved_uniform_initial_porosity\n            if not 0 < self.minimum_porosity < resolved_initial_porosity < 1:\n                raise ValueError(\n                    "Resolved initial porosity must lie between minimum_porosity and 1"\n                )\n            lowest_initial_porosity = resolved_initial_porosity\n        if not 0 < self.minimum_permeability_ratio <= 1:\n            raise ValueError("minimum_permeability_ratio must be in (0, 1]")\n'''
+          if 'Resolved initial porosity must lie' not in text:
+              if old not in text:
+                  raise SystemExit('initial porosity validation anchor not found')
+              text = text.replace(old, new, 1)
+
+          old = '''def _initial_porosity_profile(p: ModelParameters) -> np.ndarray:\n    \"\"\"Uniform default or a CT-derived axial porosity profile.\"\"\"\n\n    if p.initial_porosity_profile:\n        return np.asarray(p.initial_porosity_profile, dtype=float)\n    return np.full(p.n_cells, p.porosity_initial, dtype=float)\n'''
+          new = '''def _initial_porosity_profile(p: ModelParameters) -> np.ndarray:\n    \"\"\"Measured axial profile, given uniform value, or mass-derived value.\"\"\"\n\n    if p.initial_porosity_profile:\n        return np.asarray(p.initial_porosity_profile, dtype=float)\n    return np.full(p.n_cells, p.resolved_uniform_initial_porosity, dtype=float)\n'''
+          if 'mass-derived value' not in text:
+              if old not in text:
+                  raise SystemExit('_initial_porosity_profile anchor not found')
+              text = text.replace(old, new, 1)
+
+          solver.write_text(text, encoding='utf-8')
+
+          # Update active fine-puck case: use experimentally supplied uniform epsilon_0 = 0.55.
+          config_path = root / 'fineflow_espresso_solver/fineflow_espresso/case_config.json'
+          config = json.loads(config_path.read_text(encoding='utf-8'))
+          fine = config['cases']['fine_puck']
+          fine['initial_porosity_mode'] = 'given'
+          fine['porosity_initial'] = 0.55
+          fine['coffee_mass_kg'] = None
+          fine['particle_density_kg_m3'] = None
+          measured = fine.get('_calibration', {}).get('measured_fixed', [])
+          for key in ('initial_porosity_mode', 'porosity_initial', 'coffee_mass_kg', 'particle_density_kg_m3'):
+              if key not in measured:
+                  measured.append(key)
+          config_path.write_text(json.dumps(config, indent=2) + '\n', encoding='utf-8')
+
+          # Add a focused verification test for both initialization modes.
+          test_path = root / 'fineflow_espresso_solver/fineflow_espresso/test_fineflow.py'
+          test = test_path.read_text(encoding='utf-8')
+          anchor = '    def test_named_case_config_and_prefixed_outputs(self):\n'
+          if 'test_initial_porosity_given_or_mass_height_density' not in test:
+              addition = '''    def test_initial_porosity_given_or_mass_height_density(self):\n        quiet = dict(\n            duration_s=0.25,\n            output_interval_s=0.25,\n            available_fines_initial_kg_m3=0.0,\n            deposited_fines_initial_kg_m3=0.0,\n            mobile_concentration_initial_kg_m3_liquid=0.0,\n            release_rate_s=0.0,\n            deposition_coefficient_m_inv=0.0,\n            detachment_rate_s=0.0,\n        )\n        given = simulate(\n            self.short_case(\n                initial_porosity_mode=\"given\",\n                porosity_initial=0.55,\n                **quiet,\n            )\n        )\n        np.testing.assert_allclose(given.porosity[0], 0.55, rtol=0, atol=1e-14)\n\n        rho_p = 1200.0\n        target = 0.55\n        base = self.short_case(**quiet)\n        coffee_mass = (1.0 - target) * rho_p * base.area_m2 * base.length_m\n        computed = simulate(\n            replace(\n                base,\n                initial_porosity_mode=\"mass_height_density\",\n                coffee_mass_kg=coffee_mass,\n                particle_density_kg_m3=rho_p,\n            )\n        )\n        np.testing.assert_allclose(computed.porosity[0], target, rtol=0, atol=1e-14)\n\n'''
+              if anchor not in test:
+                  raise SystemExit('test insertion anchor not found')
+              test = test.replace(anchor, addition + anchor, 1)
+              test_path.write_text(test, encoding='utf-8')
+
+          # Document the two scalar initialization options. A supplied axial profile remains available.
+          readme_path = root / 'fineflow_espresso_solver/fineflow_espresso/README.md'
+          readme = readme_path.read_text(encoding='utf-8')
+          anchor = '''`initial_porosity_profile` and `initial_permeability_profile_m2` accept one\nvalue per finite-volume cell, allowing depth-resolved CT/PNM inputs.\n'''
+          addition = '''\nFor a uniform initial porosity, `initial_porosity_mode` has two choices:\n\n- `given`: use `porosity_initial` directly. The active `fine_puck` case currently\n  uses `porosity_initial = 0.55` as an experimentally supplied starting value.\n- `mass_height_density`: calculate\n  `epsilon0 = 1 - coffee_mass_kg/(particle_density_kg_m3*A*length_m)`.\n\n`length_m` is the puck height in this relation. `initial_porosity_profile` remains\na separate measured spatial override and is allowed only with `given` mode.\nThe PSD fine mass fraction is not changed by the porosity choice; the current\nsolver still receives its initial available-fines inventory separately in\n`available_fines_initial_kg_m3`.\n'''
+          if '`mass_height_density`' not in readme:
+              if anchor not in readme:
+                  raise SystemExit('README porosity anchor not found')
+              readme = readme.replace(anchor, anchor + addition, 1)
+              readme_path.write_text(readme, encoding='utf-8')
+
+          manual_path = root / 'fineflow_espresso_solver/fineflow_espresso/RUNNING_THE_SOLVER.txt'
+          manual = manual_path.read_text(encoding='utf-8')
+          anchor = '\n5. FINES RELEASE, DEPOSITION, AND BLOCKAGE\n------------------------------------------\n'
+          addition = '''\n4B. INITIAL POROSITY\n--------------------\n\nThe initial porosity may be specified in two scalar ways:\n\n    initial_porosity_mode = "given"\n        Use porosity_initial directly. The active fine_puck starts from 0.55.\n\n    initial_porosity_mode = "mass_height_density"\n        Compute epsilon0 = 1 - m_coffee/(rho_particle*A*H), using\n        coffee_mass_kg, particle_density_kg_m3, puck area A, and H=length_m.\n\nA non-empty initial_porosity_profile remains a measured axial override for\n"given" mode. Do not combine a profile with mass_height_density mode.\n\nPorosity does not alter the PSD mass fraction itself. In the current solver,\navailable_fines_initial_kg_m3 is still an independent input. If a measured dose\nand PSD fine mass fraction are used later to initialize fines, the physically\nconsistent bulk-volume inventory is m_fines/(A*H); changing epsilon0 alone does\nnot change that mass fraction when dose and geometry are fixed.\n\n'''
+          if '4B. INITIAL POROSITY' not in manual:
+              if anchor not in manual:
+                  raise SystemExit('manual section anchor not found')
+              manual = manual.replace(anchor, addition + anchor, 1)
+              manual_path.write_text(manual, encoding='utf-8')
+          PY
+
+      - name: Test updated solver
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install -r fineflow_espresso_solver/fineflow_espresso/requirements.txt
+          .venv/bin/python -m unittest discover -s fineflow_espresso_solver/fineflow_espresso -p test_fineflow.py
+
+      - name: Regenerate active fine-puck results at epsilon0=0.55
+        run: |
+          rm -rf _new_results
+          .venv/bin/python fineflow_espresso_solver/fineflow_espresso/fineflow_espresso.py \
+            --config fineflow_espresso_solver/fineflow_espresso/case_config.json \
+            --output-dir _new_results
+          cp _new_results/fine_puck_* fineflow_espresso_solver/fineflow_espresso/results/
+
+      - name: Commit implementation and regenerated results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            fineflow_espresso_solver/fineflow_espresso/fineflow_espresso.py \
+            fineflow_espresso_solver/fineflow_espresso/test_fineflow.py \
+            fineflow_espresso_solver/fineflow_espresso/case_config.json \
+            fineflow_espresso_solver/fineflow_espresso/README.md \
+            fineflow_espresso_solver/fineflow_espresso/RUNNING_THE_SOLVER.txt \
+            fineflow_espresso_solver/fineflow_espresso/results/
+          git commit -m "Add selectable initial porosity calculation" \
+            -m "Support either a supplied initial porosity or calculation from coffee mass, puck height/area and particle density. Set the active fine-puck example to epsilon0=0.55 and regenerate its outputs."
+          git push origin HEAD:main
